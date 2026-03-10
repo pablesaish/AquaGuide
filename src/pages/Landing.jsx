@@ -590,7 +590,7 @@ export default function Landing() {
             <div className="reveal-left">
               <span style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>AI Chatbot</span>
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(32px, 4vw, 48px)", fontWeight: 900, lineHeight: 1.15, margin: "14px 0 20px" }}>
-                Ask in plain English.<br /><em style={{ color: "var(--accent)" }}>Get expert answers.</em>
+                Ask in plain Hindi.<br /><em style={{ color: "var(--accent)" }}>Get expert answers.</em>
               </h2>
               <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginBottom: 32, fontWeight: 300 }}>
                 INGRES AI converts natural language questions into precise groundwater database queries — returning structured data, visualizations, and CGWB-backed insights instantly.
