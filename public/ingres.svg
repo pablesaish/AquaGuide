@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#061a14"/>
+      <stop offset="100%" stop-color="#03100d"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="32" y1="10" x2="32" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00e8a2"/>
+      <stop offset="55%" stop-color="#00c485"/>
+      <stop offset="100%" stop-color="#007a52"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e8a2" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00e8a2" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00e8a2" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="64" height="64" rx="13" fill="url(#bg)"/>
+
+  <!-- Ambient glow -->
+  <circle cx="32" cy="32" r="30" fill="url(#glow)"/>
+
+  <!-- Subtle orbit rings -->
+  <circle cx="32" cy="32" r="27" stroke="#00e8a2" stroke-width="0.4" opacity="0.15" stroke-dasharray="3 5"/>
+  <circle cx="32" cy="32" r="20" stroke="#00e8a2" stroke-width="0.3" opacity="0.08"/>
+
+  <!-- Water / groundwater drop -->
+  <path d="M32 10 C32 10 19 26 19 35 C19 42.18 24.82 48 32 48 C39.18 48 45 42.18 45 35 C45 26 32 10 32 10Z"
+        fill="url(#drop)" filter="url(#dropShadow)"/>
+
+  <!-- Inner shimmer highlight -->
+  <path d="M27 28 C27 28 24 33 24 37"
+        stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.18"/>
+
+  <!-- Wave lines: data signal inside drop -->
+  <path d="M25 35 Q27.5 31.5 30 35 Q32.5 38.5 35 35 Q37.5 31.5 39 35"
+        stroke="#03100d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+  <path d="M26.5 40 Q28.5 37.5 30.5 40 Q32.5 42.5 34.5 40 Q36.5 37.5 37.5 40"
+        stroke="#03100d" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.28"/>
+
+  <!-- AI node cluster top-right -->
+  <circle cx="48" cy="17" r="2.8" fill="#00e8a2" opacity="0.95"/>
+  <circle cx="55" cy="12" r="1.6" fill="#00e8a2" opacity="0.6"/>
+  <circle cx="53" cy="22" r="1.1" fill="#00e8a2" opacity="0.45"/>
+  <circle cx="57" cy="19" r="0.8" fill="#00e8a2" opacity="0.3"/>
+  <line x1="48" y1="17" x2="55" y2="12" stroke="#00e8a2" stroke-width="0.9" opacity="0.35"/>
+  <line x1="48" y1="17" x2="53" y2="22" stroke="#00e8a2" stroke-width="0.9" opacity="0.35"/>
+  <line x1="55" y1="12" x2="57" y2="19" stroke="#00e8a2" stroke-width="0.6" opacity="0.2"/>
+
+  <!-- Ground strata lines below drop -->
+  <line x1="17" y1="53" x2="47" y2="53" stroke="#00e8a2" stroke-width="1.1" stroke-linecap="round" opacity="0.28"/>
+  <line x1="21" y1="56.5" x2="43" y2="56.5" stroke="#00e8a2" stroke-width="0.8" stroke-linecap="round" opacity="0.16"/>
+  <line x1="26" y1="59.5" x2="38" y2="59.5" stroke="#00e8a2" stroke-width="0.5" stroke-linecap="round" opacity="0.09"/>
+</svg>
