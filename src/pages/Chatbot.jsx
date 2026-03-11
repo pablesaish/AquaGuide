@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
@@ -40,8 +40,8 @@ const SUGGESTIONS = [
   "Show safe zones in Karnataka",
 ];
 
-async function getGeminiResponse(query, data, apiKey) {
-  if (!apiKey) return { text: "Please enter your Gemini API Key down below to enable AI responses.", data: null };
+async function getOpenAIResponse(query, data, apiKey) {
+  if (!apiKey) return { text: "Please enter your OpenAI API Key down below to enable AI responses.", data: null };
   if (!data) return { text: "Data is loading...", data: null };
   
   const q = query.toLowerCase();
@@ -100,13 +100,18 @@ User Query: "${query}"
 `;
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    return { text: result.response.text(), data: null };
+    const openai = new OpenAI({ apiKey: apiKey, dangerouslyAllowBrowser: true });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // fallback to gpt-3.5-turbo if needed, but 4o-mini is standard
+      messages: [
+        { role: "system", content: prompt },
+        { role: "user", content: query }
+      ]
+    });
+    return { text: response.choices[0].message.content, data: null };
   } catch (err) {
     console.error(err);
-    return { text: "Oops, there was an error communicating with Gemini: " + err.message, data: null };
+    return { text: "Oops, there was an error communicating with OpenAI: " + err.message, data: null };
   }
 }
 
@@ -119,7 +124,7 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem("GEMINI_KEY") || "");
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem("OPENAI_KEY") || "");
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -140,7 +145,7 @@ export default function Chatbot() {
     // Quick delay for UI feel
     await new Promise(r => setTimeout(r, 600));
     
-    const res = await getGeminiResponse(q, data, apiKey);
+    const res = await getOpenAIResponse(q, data, apiKey);
     
     setTyping(false);
     setMessages(m => [...m, { role:"ai", text:res.text, data:res.data, ts:new Date() }]);
@@ -192,14 +197,14 @@ export default function Chatbot() {
                 <span style={{ display:"flex", alignItems:"center", gap:6 }}>
                   CGWB FY 2024-25 · ~713 assessment districts
                 </span>
-                {!import.meta.env.VITE_GEMINI_API_KEY && (
+                {!import.meta.env.VITE_OPENAI_API_KEY && (
                   <input 
                     type="password" 
-                    placeholder="Paste Gemini API Key to enable AI"
+                    placeholder="Paste OpenAI API Key to enable AI"
                     value={apiKey}
                     onChange={e => {
                       setApiKey(e.target.value);
-                      localStorage.setItem("GEMINI_KEY", e.target.value);
+                      localStorage.setItem("OPENAI_KEY", e.target.value);
                     }}
                     style={{ background:"rgba(0,0,0,0.3)", border:"1px solid var(--border)", color:"var(--accent)", padding:"4px 8px", borderRadius:4, fontSize:11, outline:"none", fontFamily:"var(--font-mono)", width:230 }}
                   />
