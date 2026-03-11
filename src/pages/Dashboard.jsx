@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import Sidebar from "../components/Sidebar";
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
@@ -25,9 +26,9 @@ const statusColors = { safe:"#00e8a2", semi:"#f0dc3a", critical:"#f5a623", over:
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activeNav, setActiveNav] = useState("dashboard");
   const [data, setData] = useState(null);
   const [greeting, setGreeting] = useState("Good morning");
+  const [hoveredBar, setHoveredBar] = useState(null);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -43,15 +44,6 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = async () => { await signOut(auth); navigate("/login"); };
-
-  const navItems = [
-    { id:"dashboard", icon:"⊞", label:"Dashboard" },
-    { id:"chatbot",   icon:"💬", label:"AI Chatbot" },
-    { id:"maps",      icon:"🗺️", label:"Map View" },
-    { id:"data",      icon:"📊", label:"Data Explorer" },
-    { id:"history",   icon:"🕐", label:"Chat History" },
-    { id:"reports",   icon:"📄", label:"Saved Reports" },
-  ];
 
   const stats = data ? [
     { label:"Total Districts", value: data.national.totalDistricts.toLocaleString(), sub:"Assessed globally", color:"#00e8a2", icon:"🔷" },
@@ -90,38 +82,10 @@ export default function Dashboard() {
       <div style={{ display:"flex", minHeight:"100vh", background:"var(--bg)" }}>
 
         {/* Sidebar */}
-        <aside style={{ width:220, background:"var(--bg2)", borderRight:"1px solid var(--border)", display:"flex", flexDirection:"column", position:"fixed", height:"100vh", zIndex:10 }}>
-          <div style={{ padding:"24px 20px", borderBottom:"1px solid var(--border)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:14, boxShadow:"0 0 16px rgba(0,232,162,0.2)" }}>IN</div>
-              <div>
-                <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:15 }}>INGRES</div>
-                <div style={{ fontSize:10, color:"var(--accent)", fontFamily:"var(--font-mono)", letterSpacing:"0.06em" }}>AI ASSISTANT</div>
-              </div>
-            </div>
-          </div>
-          <nav style={{ flex:1, padding:"16px 12px", display:"flex", flexDirection:"column", gap:4 }}>
-            {navItems.map(n => (
-              <button key={n.id} className={`nav-item${activeNav===n.id?" active":""}`} onClick={()=>{setActiveNav(n.id);if(n.id!=="dashboard")navigate("/"+n.id);}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:8, border:"none", background:"transparent", color: activeNav===n.id?"var(--accent)":"var(--muted)", cursor:"pointer", fontSize:13, fontWeight:500, fontFamily:"var(--font-body)", textAlign:"left", transition:"all 0.2s", width:"100%", borderRight: activeNav===n.id?"2px solid var(--accent)":"2px solid transparent" }}>
-                <span style={{ fontSize:15 }}>{n.icon}</span>{n.label}
-              </button>
-            ))}
-          </nav>
-          <div style={{ padding:"16px 12px", borderTop:"1px solid var(--border)" }}>
-            {user && (
-              <div style={{ marginBottom:12, padding:"10px 12px", background:"rgba(0,232,162,0.05)", borderRadius:8, border:"1px solid var(--border)" }}>
-                <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.displayName || "User"}</div>
-                <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.email}</div>
-              </div>
-            )}
-            <button onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:8, border:"none", background:"rgba(232,64,64,0.08)", color:"#fca5a5", cursor:"pointer", fontSize:12, fontWeight:500, fontFamily:"var(--font-body)", width:"100%", transition:"all 0.2s" }}>
-              🚪 Sign Out
-            </button>
-          </div>
-        </aside>
+        <Sidebar />
 
         {/* Main content */}
-        <main style={{ marginLeft:220, flex:1, padding:"32px 36px", overflowY:"auto" }}>
+        <main style={{ flex:1, padding:"32px 36px", overflowY:"auto" }}>
           {!data ? (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%" }}>
               <div style={{ color:"var(--accent)", fontFamily:"var(--font-mono)" }}>Loading FY 2024-25 Data...</div>
@@ -232,13 +196,18 @@ export default function Dashboard() {
               <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>Trend Analysis</div>
               <div style={{ fontFamily:"var(--font-display)", fontSize:16, fontWeight:700, marginBottom:6 }}>Safe Blocks % · 2023</div>
               <div style={{ fontSize:12, color:"var(--muted)", marginBottom:20 }}>Monthly distribution across India</div>
-              <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:100 }}>
+              <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:100, position:"relative" }}>
                 {trendData.map((v,i) => (
-                  <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                    <div style={{ width:"100%", height:`${v}px`, background: v>=70?"#00e8a2":v>=65?"#f0dc3a":"#f5a623", borderRadius:"3px 3px 0 0", opacity:0.8, animation:`bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i*0.07}s both`, transition:"opacity 0.2s", cursor:"default" }}
-                      onMouseEnter={e=>e.currentTarget.style.opacity="1"}
-                      onMouseLeave={e=>e.currentTarget.style.opacity="0.8"}
+                  <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, position:"relative" }}>
+                    <div style={{ width:"100%", height:`${v}px`, background: v>=70?"#00e8a2":v>=65?"#f0dc3a":"#f5a623", borderRadius:"3px 3px 0 0", opacity:0.8, animation:`bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i*0.07}s both`, transition:"all 0.2s", cursor:"pointer" }}
+                      onMouseEnter={() => setHoveredBar(i)}
+                      onMouseLeave={() => setHoveredBar(null)}
                     />
+                    {hoveredBar === i && (
+                      <div style={{ position:"absolute", bottom:`${v + 8}px`, background:"#061a14", border:"1px solid #163d2e", padding:"6px 10px", borderRadius:6, color:"#ddf0e8", fontSize:11, fontWeight:600, zIndex:10, whiteSpace:"nowrap", boxShadow:"0 4px 12px rgba(0,0,0,0.4)" }}>
+                        {months[i]}: {v}%
+                      </div>
+                    )}
                     <div style={{ fontSize:8, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>{months[i]}</div>
                   </div>
                 ))}

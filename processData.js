@@ -38,6 +38,7 @@ try {
 
     const state = String(row.__EMPTY_1).trim();
     const district = String(row.__EMPTY_2 || '').trim();
+    const block = String(row.__EMPTY_3 || '').trim();
 
     let extractionPct = parseFloat(row.__EMPTY_113); // Total Stage percentage
     if (isNaN(extractionPct)) continue;
@@ -55,6 +56,7 @@ try {
     results.push({
       state,
       district,
+      block,
       extractionPct: Math.round(extractionPct * 100) / 100,
       category,
       rawData: mappedData
@@ -92,12 +94,19 @@ try {
     if (category === "Critical") stateStats[state].critical++;
     if (category === "Over-Exploited") stateStats[state].over++;
 
-    // Add district data to stateStats
-    stateStats[state].districts[district.district] = {
+    if (!stateStats[state].districts[district.district]) {
+      stateStats[state].districts[district.district] = {
+        blocks: []
+      };
+    }
+    
+    // Add block data to stateStats
+    stateStats[state].districts[district.district].blocks.push({
+      block: district.block,
       extractionPct: district.extractionPct,
       category: district.category,
       rawData: district.rawData
-    };
+    });
   }
 
   const finalData = {

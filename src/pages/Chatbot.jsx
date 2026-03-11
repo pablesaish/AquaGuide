@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import OpenAI from "openai";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -25,10 +26,17 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);he
 .nav-item:hover{background:var(--accent-dim)!important;color:var(--accent)!important;}
 .suggest-chip:hover{border-color:rgba(0,232,162,0.4)!important;color:var(--accent)!important;background:rgba(0,232,162,0.08)!important;}
 .msg-bubble:hover{transform:scale(1.005);}
-.ai-markdown p { margin-bottom: 12px; }
+.msg-bubble:hover{transform:scale(1.005);}
+.ai-markdown p { margin-bottom: 12px; line-height: 1.6; }
 .ai-markdown ul, .ai-markdown ol { padding-left: 20px; margin-bottom: 12px; }
-.ai-markdown li { margin-bottom: 4px; }
+.ai-markdown li { margin-bottom: 6px; }
 .ai-markdown strong { color: var(--accent); }
+.ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { margin-top: 16px; margin-bottom: 10px; color: var(--accent); font-family: var(--font-display); }
+.ai-markdown table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; font-family: var(--font-body); overflow: hidden; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.ai-markdown th, .ai-markdown td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+.ai-markdown th { background: rgba(0,232,162,0.08); color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; font-family: var(--font-mono); }
+.ai-markdown tr:last-child td { border-bottom: none; }
+.ai-markdown tr:hover td { background: rgba(0,232,162,0.04); transition: background 0.2s; }
 `;
 
 const SUGGESTIONS = [
@@ -119,21 +127,115 @@ export default function Chatbot() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [data, setData] = useState(null);
-  const [messages, setMessages] = useState([
-    { role:"ai", text:"Hello! I'm AquaGuide AI, your groundwater intelligence assistant. I can help you query our detailed FY 2024-25 assessment data across India. What would you like to know?", ts: new Date() }
-  ]);
+
+  const defaultWelcome = { role:"ai", text:"Hello! I'm AquaGuide AI, your groundwater intelligence assistant. I can help you query our detailed FY 2024-25 assessment data across India. What would you like to know?", ts: new Date() };
+  
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [messages, setMessages] = useState([defaultWelcome]);
+  
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem("OPENAI_KEY") || "");
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  // Tracks active session ID synchronously — prevents duplicate sessions
+  // when messages state updates twice (user msg + AI reply) before setState settles.
+  const activeSessionRef = useRef(null);
 
   useEffect(() => { 
-    const u = onAuthStateChanged(auth, u => { if (!u) navigate("/login"); else setUser(u); }); 
+    const u = onAuthStateChanged(auth, async u => { 
+      if (!u) {
+        navigate("/login"); 
+      } else {
+        setUser(u);
+        const q = query(collection(db, "chat_sessions"), where("userId", "==", u.uid));
+        try {
+          const snapshot = await getDocs(q);
+          const loadedSessions = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+          setSessions(loadedSessions);
+        } catch (err) {
+          console.error("Error loading chat history:", err);
+        }
+      }
+    }); 
     fetch('/summaryData.json').then(r => r.json()).then(d => setData(d)).catch(console.error);
     return u; 
-  }, []);
+  }, [navigate]);
+  
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages, typing]);
+
+  // Persist messages to active session
+  useEffect(() => {
+    if (messages.length <= 1 || !user) return;
+
+    const serializedMessages = messages.map(m => ({
+      role: m.role,
+      text: m.text,
+      data: m.data || null,
+      ts: m.ts instanceof Date ? m.ts.toISOString() : m.ts
+    }));
+
+    const firstUserMsg = messages.find(m => m.role === "user")?.text || "New Chat";
+    const snippet = firstUserMsg.length > 28 ? firstUserMsg.slice(0, 28) + "..." : firstUserMsg;
+
+    const sessionData = {
+      userId: user.uid,
+      title: snippet,
+      messages: serializedMessages,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Use the ref (not state) so we always read the latest ID synchronously.
+    // This prevents the AI reply from creating a second session before
+    // setActiveSessionId has re-rendered.
+    const currentId = activeSessionRef.current;
+
+    if (currentId) {
+      // Update existing session
+      setSessions(prev =>
+        prev.map(s => s.id === currentId ? { ...s, ...sessionData } : s)
+      );
+      setDoc(doc(db, "chat_sessions", currentId), sessionData, { merge: true }).catch(console.error);
+    } else {
+      // Create new session — generate ID immediately and store in ref
+      const newId = Date.now().toString();
+      activeSessionRef.current = newId;   // set ref synchronously
+      setActiveSessionId(newId);          // also update state for UI
+      setSessions(prev => [{ id: newId, ...sessionData }, ...prev]);
+      setDoc(doc(db, "chat_sessions", newId), sessionData).catch(console.error);
+    }
+  }, [messages]);
+
+  const startNewChat = () => {
+    activeSessionRef.current = null;   // clear ref synchronously
+    setActiveSessionId(null);
+    setMessages([{...defaultWelcome, ts: new Date()}]);
+  };
+  
+  const loadSession = (id) => {
+    const s = sessions.find(s => s.id === id);
+    if (s) {
+      activeSessionRef.current = id;   // keep ref in sync
+      setActiveSessionId(id);
+      setMessages(s.messages.map(m => ({ ...m, ts: new Date(m.ts) })));
+    }
+  };
+
+  const deleteSession = async (e, id) => {
+    e.stopPropagation();
+    const updated = sessions.filter(s => s.id !== id);
+    setSessions(updated);
+    if (activeSessionId === id) startNewChat();
+    
+    try {
+      await deleteDoc(doc(db, "chat_sessions", id));
+    } catch (err) {
+      console.error("Error deleting session:", err);
+    }
+  };
 
   const send = async (text) => {
     const q = text || input.trim();
@@ -172,12 +274,25 @@ export default function Chatbot() {
           </div>
 
           <div style={{ padding:"16px", borderBottom:"1px solid var(--border)" }}>
-            <button onClick={()=>setMessages([{role:"ai",text:"Hello! I'm INGRES AI. Ask me anything about India's groundwater data.",ts:new Date()}])} style={{ width:"100%", padding:"10px", background:"var(--accent-dim)", border:"1px solid rgba(0,232,162,0.2)", borderRadius:8, color:"var(--accent)", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"var(--font-body)" }}>
+            <button onClick={startNewChat} style={{ width:"100%", padding:"10px", background:"var(--accent-dim)", border:"1px solid rgba(0,232,162,0.2)", borderRadius:8, color:"var(--accent)", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"var(--font-body)", transition:"box-shadow 0.2s" }} onMouseOver={e=>e.currentTarget.style.boxShadow="0 0 12px var(--accent-glow)"} onMouseOut={e=>e.currentTarget.style.boxShadow="none"}>
               + New Chat
             </button>
           </div>
 
-          <div style={{ flex:1, padding:"16px", overflowY:"auto" }}>
+          <div style={{ flex:1, padding:"16px", overflowY:"auto", display:"flex", flexDirection:"column" }}>
+            
+            {sessions.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>Chat History</div>
+                {sessions.map(s => (
+                  <div key={s.id} onClick={() => loadSession(s.id)} style={{ padding:"10px 12px", marginBottom:6, background: activeSessionId === s.id ? "rgba(0,232,162,0.1)" : "transparent", border: activeSessionId === s.id ? "1px solid rgba(0,232,162,0.3)" : "1px solid transparent", borderRadius:7, fontSize:13, color: activeSessionId === s.id ? "var(--text)" : "var(--muted)", cursor:"pointer", transition:"all 0.2s", display:"flex", justifyContent:"space-between", alignItems:"center" }} className="nav-item">
+                    <span style={{ whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.title}</span>
+                    <button onClick={(e) => deleteSession(e, s.id)} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:11, padding:4 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>Try asking</div>
             {SUGGESTIONS.map((s,i) => (
               <div key={i} className="suggest-chip" onClick={()=>send(s)} style={{ padding:"9px 12px", marginBottom:6, background:"rgba(0,232,162,0.03)", border:"1px solid rgba(0,232,162,0.1)", borderRadius:7, fontSize:12, color:"var(--muted)", cursor:"pointer", transition:"all 0.2s", fontFamily:"var(--font-mono)", lineHeight:1.4 }}>
@@ -245,24 +360,62 @@ export default function Chatbot() {
                                       label: chartConfig.title || 'Data',
                                       data: chartConfig.data,
                                       backgroundColor: [
-                                        '#00e8a2', '#f0dc3a', '#f5a623', '#e84040', '#00b87a', '#163d2e'
+                                        'rgba(0, 232, 162, 0.85)', 
+                                        'rgba(240, 220, 58, 0.85)', 
+                                        'rgba(245, 166, 35, 0.85)', 
+                                        'rgba(232, 64, 64, 0.85)', 
+                                        'rgba(0, 184, 122, 0.85)', 
+                                        'rgba(90, 138, 119, 0.85)'
                                       ],
-                                      borderColor: 'rgba(255,255,255,0.1)',
-                                      borderWidth: 1,
+                                      hoverBackgroundColor: [
+                                        '#00e8a2', '#f0dc3a', '#f5a623', '#e84040', '#00b87a', '#78a892'
+                                      ],
+                                      borderColor: '#0a2318',
+                                      borderWidth: 2,
+                                      hoverOffset: chartConfig.type === 'pie' ? 12 : 0,
+                                      borderRadius: chartConfig.type === 'bar' ? 6 : 0,
                                     }]
                                   };
                                   
                                   const options = {
                                     responsive: true,
-                                    plugins: { legend: { labels: { color: '#ddf0e8' } }, title: { display: !!chartConfig.title, text: chartConfig.title, color: '#ddf0e8' } },
+                                    maintainAspectRatio: false,
+                                    animation: { animateScale: true, animateRotate: true, duration: 800 },
+                                    plugins: { 
+                                      legend: { 
+                                        position: 'bottom',
+                                        labels: { color: '#ddf0e8', padding: 16, font: { family: "'DM Sans', sans-serif", size: 12 }, usePointStyle: true, pointStyle: 'circle' } 
+                                      }, 
+                                      title: { display: !!chartConfig.title, text: chartConfig.title, color: '#00e8a2', font: { family: "'Playfair Display', serif", size: 16, weight: 'bold' }, padding: { bottom: 20 } },
+                                      tooltip: {
+                                        backgroundColor: 'rgba(6, 26, 20, 0.95)',
+                                        titleColor: '#00e8a2',
+                                        bodyColor: '#ddf0e8',
+                                        borderColor: '#163d2e',
+                                        borderWidth: 1,
+                                        padding: 12,
+                                        cornerRadius: 8,
+                                        displayColors: true,
+                                        boxPadding: 6,
+                                        callbacks: {
+                                          label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            return ` ${label}: ${value}`;
+                                          }
+                                        }
+                                      }
+                                    },
                                     scales: chartConfig.type === 'bar' ? {
-                                      y: { ticks: { color: '#5a8a77' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                                      x: { ticks: { color: '#5a8a77' }, grid: { display: false } }
+                                      y: { ticks: { color: '#5a8a77', font:{family:"'DM Mono', monospace"} }, grid: { color: 'rgba(0, 232, 162, 0.05)', tickLength: 0 }, border: { dash: [4,4], display: false } },
+                                      x: { ticks: { color: '#ddf0e8', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
                                     } : {}
                                   };
 
                                   return (
-                                    <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: 16, marginTop: 16, marginBottom: 16, border: "1px solid var(--border)", position: "relative", zIndex: 1, maxWidth: chartConfig.type === 'pie' ? "300px" : "100%", margin: "16px auto" }}>
+                                    <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: chartConfig.type === 'pie' ? "380px" : "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
+                                         onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+                                         onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
                                       {chartConfig.type === 'pie' ? <Pie data={chartData} options={options} /> : <Bar data={chartData} options={options} />}
                                     </div>
                                   );

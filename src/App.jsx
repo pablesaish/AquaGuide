@@ -4,9 +4,12 @@
  import Landing from './pages/Landing'
   import Login from './pages/Login'
   import Register from './pages/Register'
-  import Dashboard from './pages/Dashboard'
-  import Chatbot from './pages/Chatbot'
- const App = () => {
+import Dashboard from './pages/Dashboard'
+import Chatbot from './pages/Chatbot'
+import History from './pages/History'
+import Map from './pages/Map'
+
+const App = () => {
    return (
      <>
         <Routes>
@@ -15,6 +18,8 @@
             <Route path='/register' element={<Register/>} />
             <Route path='/dashboard' element={<Dashboard/>} />
             <Route path='/chatbot' element={<Chatbot/>} />
+            <Route path='/history' element={<History/>} />
+            <Route path='/maps' element={<Map/>} />
         </Routes>
      </>
    )
