@@ -417,9 +417,9 @@ export default function Landing() {
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = "rotate(8deg) scale(1.1)"; e.currentTarget.style.boxShadow = "0 0 28px var(--accent-glow)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 0 18px var(--accent-glow)"; }}
-          >IN</div>
+          ><img src="/ingres.svg" alt="" /></div>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, letterSpacing: "0.03em" }}>
-            INGRES <span style={{ color: "var(--accent)", fontStyle: "italic" }}>AI</span>
+            AquaGuide <span style={{ color: "var(--accent)", fontStyle: "italic" }}>AI</span>
           </span>
         </div>
 

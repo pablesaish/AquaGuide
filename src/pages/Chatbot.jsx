@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
@@ -18,6 +25,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);he
 .nav-item:hover{background:var(--accent-dim)!important;color:var(--accent)!important;}
 .suggest-chip:hover{border-color:rgba(0,232,162,0.4)!important;color:var(--accent)!important;background:rgba(0,232,162,0.08)!important;}
 .msg-bubble:hover{transform:scale(1.005);}
+.ai-markdown p { margin-bottom: 12px; }
+.ai-markdown ul, .ai-markdown ol { padding-left: 20px; margin-bottom: 12px; }
+.ai-markdown li { margin-bottom: 4px; }
+.ai-markdown strong { color: var(--accent); }
 `;
 
 const SUGGESTIONS = [
@@ -29,33 +40,94 @@ const SUGGESTIONS = [
   "Show safe zones in Karnataka",
 ];
 
-const SAMPLE_RESPONSES = {
-  "maharashtra": { text:"Found 23 over-exploited districts in Maharashtra. Most critical: Nashik (181%), Aurangabad (162%), Pune (164%). Overall: 34% of blocks are over-exploited, 22% critical.", data:[["Safe","#00e8a2","12"],["Semi-Crit.","#f0dc3a","8"],["Critical","#f5a623","3"],["Over-Exp.","#e84040","23"]] },
-  "rajasthan": { text:"Rajasthan has 47% over-exploited blocks — the highest in India. Key districts: Jaipur (198%), Jodhpur (176%), Ajmer (165%). Arid conditions and heavy irrigation cause severe depletion.", data:[["Safe","#00e8a2","6"],["Semi-Crit.","#f0dc3a","4"],["Critical","#f5a623","5"],["Over-Exp.","#e84040","47"]] },
-  "gujarat": { text:"Gujarat has a mixed groundwater picture. 12 districts are critical or over-exploited, mainly in North Gujarat. Kachchh is especially vulnerable with extraction at 189% of sustainable limits.", data:[["Safe","#00e8a2","18"],["Semi-Crit.","#f0dc3a","10"],["Critical","#f5a623","7"],["Over-Exp.","#e84040","5"]] },
-  "default": { text:"I found relevant groundwater data for your query. The analysis shows varied extraction levels across the assessed blocks. Key indicators include recharge rates, extraction volumes, and stage of extraction percentages.", data:[["Safe","#00e8a2","15"],["Semi-Crit.","#f0dc3a","9"],["Critical","#f5a623","6"],["Over-Exp.","#e84040","12"]] },
-};
-
-function getResponse(query) {
+async function getGeminiResponse(query, data, apiKey) {
+  if (!apiKey) return { text: "Please enter your Gemini API Key down below to enable AI responses.", data: null };
+  if (!data) return { text: "Data is loading...", data: null };
+  
   const q = query.toLowerCase();
-  if (q.includes("maharashtra") || q.includes("pune") || q.includes("nashik")) return SAMPLE_RESPONSES.maharashtra;
-  if (q.includes("rajasthan") || q.includes("jaipur")) return SAMPLE_RESPONSES.rajasthan;
-  if (q.includes("gujarat")) return SAMPLE_RESPONSES.gujarat;
-  return SAMPLE_RESPONSES.default;
+  
+  // To avoid sending 6MB on every request, we smartly filter the data sent to the LLM based on the query.
+  let contextData = {};
+  const states = Object.keys(data.stateStats);
+  
+  // Find which state(s) the user explicitly mentioned
+  const matchedStates = states.filter(s => q.includes(s.toLowerCase()));
+  
+  // Also find which district(s) the user explicitly mentioned, and include their state automatically
+  const matchedDistricts = [];
+  states.forEach(s => {
+    Object.keys(data.stateStats[s].districts).forEach(dist => {
+      if (q.includes(dist.toLowerCase())) {
+        matchedDistricts.push(dist);
+        if (!matchedStates.includes(s)) matchedStates.push(s);
+      }
+    });
+  });
+
+  if (matchedStates.length > 0) {
+    // If a state or district was matched, pass the full state object (which includes districts) to Gemini
+    matchedStates.forEach(s => contextData[s] = data.stateStats[s]);
+  } else {
+    // Basic overview if no specific state or district is mentioned
+    contextData = {
+      nationalSummary: data.national,
+      stateOverview: Object.fromEntries(
+        Object.entries(data.stateStats).map(([s, stat]) => [s, { safe: stat.safe, overExploited: stat.over, total: stat.total }])
+      )
+    };
+  }
+
+  const prompt = `
+You are AquaGuide AI, an expert, human-friendly groundwater intelligence assistant for India.
+You strictly answer based on the provided FY 2024-25 India groundwater data below. 
+Analyze the data and give your answers in a conversational, friendly paragraph format instead of just raw lists. 
+Highlight key insights, be interactive, and explain the significance of the numbers. 
+If the user asks about multiple categories of things (like Safe vs Critical numbers), or if a chart would make the data clearer, YOU MUST include a JSON block in this exact format at the very end of your response:
+\`\`\`chart
+{
+  "type": "pie", 
+  "title": "Clear Title Here",
+  "labels": ["Label 1", "Label 2"],
+  "data": [10, 20]
+}
+\`\`\`
+Use "pie" or "bar" for the chart type. 
+
+DATA CONTEXT:
+${JSON.stringify(contextData)}
+
+User Query: "${query}"
+`;
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    return { text: result.response.text(), data: null };
+  } catch (err) {
+    console.error(err);
+    return { text: "Oops, there was an error communicating with Gemini: " + err.message, data: null };
+  }
 }
 
 export default function Chatbot() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [data, setData] = useState(null);
   const [messages, setMessages] = useState([
-    { role:"ai", text:"Hello! I'm INGRES AI, your groundwater intelligence assistant. I can help you query data on 7,000+ assessment blocks across India. What would you like to know?", ts: new Date() }
+    { role:"ai", text:"Hello! I'm AquaGuide AI, your groundwater intelligence assistant. I can help you query our detailed FY 2024-25 assessment data across India. What would you like to know?", ts: new Date() }
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem("GEMINI_KEY") || "");
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => { const u = onAuthStateChanged(auth, u => { if (!u) navigate("/login"); else setUser(u); }); return u; }, []);
+  useEffect(() => { 
+    const u = onAuthStateChanged(auth, u => { if (!u) navigate("/login"); else setUser(u); }); 
+    fetch('/summaryData.json').then(r => r.json()).then(d => setData(d)).catch(console.error);
+    return u; 
+  }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages, typing]);
 
   const send = async (text) => {
@@ -64,9 +136,13 @@ export default function Chatbot() {
     setInput("");
     setMessages(m => [...m, { role:"user", text:q, ts:new Date() }]);
     setTyping(true);
-    await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+    
+    // Quick delay for UI feel
+    await new Promise(r => setTimeout(r, 600));
+    
+    const res = await getGeminiResponse(q, data, apiKey);
+    
     setTyping(false);
-    const res = getResponse(q);
     setMessages(m => [...m, { role:"ai", text:res.text, data:res.data, ts:new Date() }]);
   };
 
@@ -81,9 +157,9 @@ export default function Chatbot() {
         <aside style={{ width:260, background:"var(--bg2)", borderRight:"1px solid var(--border)", display:"flex", flexDirection:"column" }}>
           <div style={{ padding:"20px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:10 }}>
             <button onClick={()=>navigate("/dashboard")} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:18, lineHeight:1 }}>←</button>
-            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:13, boxShadow:"0 0 14px rgba(0,232,162,0.2)" }}>IN</div>
+            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:13, boxShadow:"0 0 14px rgba(0,232,162,0.2)" }}>AQ</div>
             <div>
-              <div style={{ fontWeight:700, fontSize:14, fontFamily:"var(--font-display)" }}>INGRES AI</div>
+              <div style={{ fontWeight:700, fontSize:14, fontFamily:"var(--font-display)" }}>AquaGuide AI</div>
               <div style={{ fontSize:10, color:"var(--accent)", fontFamily:"var(--font-mono)", display:"flex", alignItems:"center", gap:4 }}>
                 <span style={{ width:5, height:5, borderRadius:"50%", background:"var(--accent)", display:"inline-block", animation:"pulse-dot 1.5s infinite" }} />Online
               </div>
@@ -112,7 +188,23 @@ export default function Chatbot() {
           <div style={{ padding:"16px 24px", borderBottom:"1px solid var(--border)", background:"var(--bg2)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div>
               <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:18 }}>Groundwater Intelligence</div>
-              <div style={{ fontSize:12, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>CGWB Data · 7,089 assessment blocks · India</div>
+              <div style={{ fontSize:12, color:"var(--muted)", fontFamily:"var(--font-mono)", display:"flex", gap:15, alignItems:"center", marginTop:4 }}>
+                <span style={{ display:"flex", alignItems:"center", gap:6 }}>
+                  CGWB FY 2024-25 · ~713 assessment districts
+                </span>
+                {!import.meta.env.VITE_GEMINI_API_KEY && (
+                  <input 
+                    type="password" 
+                    placeholder="Paste Gemini API Key to enable AI"
+                    value={apiKey}
+                    onChange={e => {
+                      setApiKey(e.target.value);
+                      localStorage.setItem("GEMINI_KEY", e.target.value);
+                    }}
+                    style={{ background:"rgba(0,0,0,0.3)", border:"1px solid var(--border)", color:"var(--accent)", padding:"4px 8px", borderRadius:4, fontSize:11, outline:"none", fontFamily:"var(--font-mono)", width:230 }}
+                  />
+                )}
+              </div>
             </div>
             <div style={{ display:"flex", gap:8 }}>
               {["Safe","Semi-Critical","Critical","Over-Exploited"].map((s,i)=>{
@@ -127,12 +219,61 @@ export default function Chatbot() {
             {messages.map((m,i) => (
               <div key={i} className="msg-bubble" style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", animation:`fadeUp 0.3s ease both`, transition:"transform 0.2s" }}>
                 {m.role==="ai" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,232,162,0.2)" }}>IN</div>
+                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,232,162,0.2)" }}>AQ</div>
                 )}
                 <div style={{ maxWidth:"72%" }}>
                   <div style={{ padding:"12px 16px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?"var(--accent)":"var(--surface)", border:m.role==="ai"?"1px solid var(--border)":"none", color:m.role==="user"?"#03100d":"var(--text)", fontSize:14, lineHeight:1.6, fontWeight:m.role==="user"?500:400 }}>
-                    {m.text}
-                    {m.data && (
+                    {m.role === "user" ? m.text : (
+                      <div className="ai-markdown">
+                        <ReactMarkdown 
+                          rehypePlugins={[rehypeRaw]}
+                          components={{
+                            code({node, inline, className, children, ...props}) {
+                              const match = /language-(\w+)/.exec(className || '')
+                              if (!inline && match && match[1] === 'chart') {
+                                try {
+                                  const chartConfig = JSON.parse(String(children).replace(/\n/g, ''));
+                                  
+                                  const chartData = {
+                                    labels: chartConfig.labels,
+                                    datasets: [{
+                                      label: chartConfig.title || 'Data',
+                                      data: chartConfig.data,
+                                      backgroundColor: [
+                                        '#00e8a2', '#f0dc3a', '#f5a623', '#e84040', '#00b87a', '#163d2e'
+                                      ],
+                                      borderColor: 'rgba(255,255,255,0.1)',
+                                      borderWidth: 1,
+                                    }]
+                                  };
+                                  
+                                  const options = {
+                                    responsive: true,
+                                    plugins: { legend: { labels: { color: '#ddf0e8' } }, title: { display: !!chartConfig.title, text: chartConfig.title, color: '#ddf0e8' } },
+                                    scales: chartConfig.type === 'bar' ? {
+                                      y: { ticks: { color: '#5a8a77' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                                      x: { ticks: { color: '#5a8a77' }, grid: { display: false } }
+                                    } : {}
+                                  };
+
+                                  return (
+                                    <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: 16, marginTop: 16, marginBottom: 16, border: "1px solid var(--border)", position: "relative", zIndex: 1, maxWidth: chartConfig.type === 'pie' ? "300px" : "100%", margin: "16px auto" }}>
+                                      {chartConfig.type === 'pie' ? <Pie data={chartData} options={options} /> : <Bar data={chartData} options={options} />}
+                                    </div>
+                                  );
+                                } catch (e) {
+                                  return <code>{children}</code>;
+                                }
+                              }
+                              return <code className={className} {...props}>{children}</code>
+                            }
+                          }}
+                        >
+                          {m.text}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                    {m.data && !m.text.includes("```chart") && (
                       <div style={{ marginTop:12, display:"flex", gap:8 }}>
                         {m.data.map(([l,c,n])=>(
                           <div key={l} style={{ flex:1, background:`${c}18`, border:`1px solid ${c}33`, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
@@ -182,7 +323,7 @@ export default function Chatbot() {
               </button>
             </div>
             <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", textAlign:"center", marginTop:8 }}>
-              Powered by CGWB data · Press Enter to send · Shift+Enter for new line
+              Powered by CGWB FY 2024-25 data · Press Enter to send · Shift+Enter for new line
             </div>
           </div>
         </div>

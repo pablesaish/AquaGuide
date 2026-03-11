@@ -26,12 +26,19 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
+  const [data, setData] = useState(null);
   const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     const h = new Date().getHours();
     setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
     const u = onAuthStateChanged(auth, u => { if (!u) navigate("/login"); else setUser(u); });
+    
+    fetch('/summaryData.json')
+      .then(res => res.json())
+      .then(d => setData(d))
+      .catch(console.error);
+
     return u;
   }, []);
 
@@ -46,12 +53,12 @@ export default function Dashboard() {
     { id:"reports",   icon:"📄", label:"Saved Reports" },
   ];
 
-  const stats = [
-    { label:"Total Blocks", value:"7,089", sub:"Assessment units", color:"#00e8a2", icon:"🔷" },
-    { label:"Over-Exploited", value:"1,006", sub:"Need urgent action", color:"#e84040", icon:"🔴" },
-    { label:"Critical Zones", value:"490", sub:"Under stress", color:"#f5a623", icon:"🟠" },
-    { label:"Safe Blocks", value:"4,838", sub:"Within limits", color:"#00e8a2", icon:"🟢" },
-  ];
+  const stats = data ? [
+    { label:"Total Districts", value: data.national.totalDistricts.toLocaleString(), sub:"Assessed globally", color:"#00e8a2", icon:"🔷" },
+    { label:"Over-Exploited", value: data.national.overExploited.toLocaleString(), sub:"Need urgent action", color:"#e84040", icon:"🔴" },
+    { label:"Critical Zones", value: data.national.critical.toLocaleString(), sub:"Under stress", color:"#f5a623", icon:"🟠" },
+    { label:"Safe Districts", value: data.national.safe.toLocaleString(), sub:"Within limits", color:"#00e8a2", icon:"🟢" },
+  ] : [];
 
   const recentChats = [
     "Groundwater status in Maharashtra districts",
@@ -67,12 +74,12 @@ export default function Dashboard() {
     { icon:"📄", label:"My Reports", desc:"View saved reports", path:"/reports", accent:"#60a5fa" },
   ];
 
-  const nationalData = [
-    { label:"Safe",           pct:68, count:"4,838", color:"#00e8a2" },
-    { label:"Semi-Critical",  pct:12, count:"840",   color:"#f0dc3a" },
-    { label:"Critical",       pct:7,  count:"490",   color:"#f5a623" },
-    { label:"Over-Exploited", pct:13, count:"1,006", color:"#e84040" },
-  ];
+  const nationalData = data ? [
+    { label:"Safe",           pct: Math.round(data.national.safe / data.national.totalDistricts * 100), count: data.national.safe.toLocaleString(), color:"#00e8a2" },
+    { label:"Semi-Critical",  pct: Math.round(data.national.semiCritical / data.national.totalDistricts * 100), count: data.national.semiCritical.toLocaleString(),   color:"#f0dc3a" },
+    { label:"Critical",       pct: Math.round(data.national.critical / data.national.totalDistricts * 100),  count: data.national.critical.toLocaleString(),   color:"#f5a623" },
+    { label:"Over-Exploited", pct: Math.round(data.national.overExploited / data.national.totalDistricts * 100), count: data.national.overExploited.toLocaleString(), color:"#e84040" },
+  ] : [];
 
   const trendData = [78,74,71,68,65,64,63,62,64,67,68,68];
   const months = ["J","F","M","A","M","J","J","A","S","O","N","D"];
@@ -115,13 +122,19 @@ export default function Dashboard() {
 
         {/* Main content */}
         <main style={{ marginLeft:220, flex:1, padding:"32px 36px", overflowY:"auto" }}>
+          {!data ? (
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%" }}>
+              <div style={{ color:"var(--accent)", fontFamily:"var(--font-mono)" }}>Loading FY 2024-25 Data...</div>
+            </div>
+          ) : (
+            <>
 
           {/* Header */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:32, animation:"fadeUp 0.5s ease both" }}>
             <div>
               <div style={{ fontSize:12, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", marginBottom:6 }}>
                 <span style={{ width:6, height:6, borderRadius:"50%", background:"var(--accent)", display:"inline-block", marginRight:6, animation:"pulse-dot 1.5s infinite" }} />
-                CGWB DATA CONNECTED · {new Date().toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}
+                FY 2024-25 DATA CONNECTED · {new Date().toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}
               </div>
               <h1 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(24px,3vw,34px)", fontWeight:900, lineHeight:1.15 }}>
                 {greeting},{" "}
@@ -175,7 +188,7 @@ export default function Dashboard() {
             {/* National Summary */}
             <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:16, padding:"24px", animation:"fadeUp 0.5s ease 0.25s both" }}>
               <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>National Summary</div>
-              <div style={{ fontFamily:"var(--font-display)", fontSize:18, fontWeight:700, marginBottom:20 }}>India · 2023 Data</div>
+              <div style={{ fontFamily:"var(--font-display)", fontSize:18, fontWeight:700, marginBottom:20 }}>India · FY 2024-25</div>
               {nationalData.map((r,i) => (
                 <div key={r.label} style={{ marginBottom:16, animation:`fadeUp 0.5s ease ${0.35+i*0.07}s both` }}>
                   <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6 }}>
@@ -188,7 +201,7 @@ export default function Dashboard() {
                 </div>
               ))}
               <div style={{ marginTop:20, padding:"10px 12px", background:"rgba(0,232,162,0.06)", border:"1px solid rgba(0,232,162,0.15)", borderRadius:8, fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>
-                Source: CGWB Annual Assessment Report 2023
+                Source: CGWB FY 2024-25 Assessment
               </div>
             </div>
           </div>
@@ -239,6 +252,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          </>
+        )}
         </main>
       </div>
     </>
