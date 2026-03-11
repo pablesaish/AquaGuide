@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 /* ══════════════════════════════════════════════════════════
    INGRES AI — Landing Page
@@ -219,6 +220,7 @@ function CountUp({ to, suffix = "" }) {
 }
 
 export default function Landing() {
+  const navigate = useNavigate();
 
   /* ── Scroll progress bar ── */
   const [scrollPct, setScrollPct] = useState(0);
@@ -435,6 +437,7 @@ export default function Landing() {
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--accent-dim)"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "transparent"; }}
+            onClick={() => navigate('/login')}
           >Login</button>
           <button className="btn-ripple" style={{
             padding: "9px 22px", borderRadius: 8, border: "none",
@@ -444,6 +447,7 @@ export default function Landing() {
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 30px var(--accent-glow)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 0 20px var(--accent-glow)"; }}
+            onClick={() => navigate('/register')}
           >Get Started</button>
         </div>
       </nav>
