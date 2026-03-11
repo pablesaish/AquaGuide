@@ -42,7 +42,9 @@ export default function Sidebar() {
       <aside className="sidebar-container">
         <div style={{ padding: "24px 20px", borderBottom: "1px solid #163d2e", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #00b87a, #00e8a2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontWeight: 900, color: "#03100d", fontSize: 14, boxShadow: "0 0 16px rgba(0,232,162,0.2)", cursor: "pointer" }} onClick={() => navigate("/")}>IN</div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #00b87a, #00e8a2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontWeight: 900, color: "#03100d", fontSize: 14, boxShadow: "0 0 16px rgba(0,232,162,0.2)", cursor: "pointer" }} onClick={() => navigate("/")}>
+              <img src="/ingres.svg" alt="" />
+            </div>
             <div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 15, color: "#ddf0e8", lineHeight: 1.2 }}>AquaGuide</div>
               <div style={{ fontSize: 10, color: "#00e8a2", fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em", marginTop: 2 }}>AI ASSISTANT</div>

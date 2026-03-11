@@ -264,7 +264,9 @@ export default function Chatbot() {
         <aside style={{ width:260, background:"var(--bg2)", borderRight:"1px solid var(--border)", display:"flex", flexDirection:"column" }}>
           <div style={{ padding:"20px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:10 }}>
             <button onClick={()=>navigate("/dashboard")} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:18, lineHeight:1 }}>←</button>
-            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:13, boxShadow:"0 0 14px rgba(0,232,162,0.2)" }}>AQ</div>
+            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:13, boxShadow:"0 0 14px rgba(0,232,162,0.2)", cursor:"pointer" }} onClick={() => navigate('/')}>
+                <img src="/ingres.svg" alt="" />
+            </div>
             <div>
               <div style={{ fontWeight:700, fontSize:14, fontFamily:"var(--font-display)" }}>AquaGuide AI</div>
               <div style={{ fontSize:10, color:"var(--accent)", fontFamily:"var(--font-mono)", display:"flex", alignItems:"center", gap:4 }}>
@@ -339,7 +341,9 @@ export default function Chatbot() {
             {messages.map((m,i) => (
               <div key={i} className="msg-bubble" style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", animation:`fadeUp 0.3s ease both`, transition:"transform 0.2s" }}>
                 {m.role==="ai" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,232,162,0.2)" }}>AQ</div>
+                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,232,162,0.2)" }}>
+                    <img src="/ingres.svg" alt="" />
+                  </div>
                 )}
                 <div style={{ maxWidth:"72%" }}>
                   <div style={{ padding:"12px 16px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?"var(--accent)":"var(--surface)", border:m.role==="ai"?"1px solid var(--border)":"none", color:m.role==="user"?"#03100d":"var(--text)", fontSize:14, lineHeight:1.6, fontWeight:m.role==="user"?500:400 }}>
