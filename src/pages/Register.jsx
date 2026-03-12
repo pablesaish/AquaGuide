@@ -14,23 +14,12 @@ const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisga
 const OCCUPATIONS = ["Researcher / Scientist","Government Official","Farmer / Agriculturist","Student","NGO / Activist","Policy Maker","Engineer","Journalist","Other"];
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-:root{--bg:#03100d;--bg2:#061a14;--surface:#0a2318;--border:#163d2e;--accent:#00e8a2;--accent2:#00b87a;--accent-dim:rgba(0,232,162,0.12);--accent-glow:rgba(0,232,162,0.25);--text:#ddf0e8;--muted:#5a8a77;--font-display:'Playfair Display',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--font-body);}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-@keyframes glow-pulse{0%,100%{opacity:0.06;}50%{opacity:0.13;}}
-@keyframes spin-slow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-.auth-input:focus,.auth-select:focus{border-color:rgba(0,232,162,0.4)!important;outline:none;box-shadow:0 0 0 3px rgba(0,232,162,0.07);}
-.auth-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow)!important;}
-.auth-btn-ghost:hover{border-color:rgba(0,232,162,0.4)!important;color:var(--accent)!important;background:var(--accent-dim)!important;}
-.step-indicator.active{background:var(--accent)!important;color:#03100d!important;}
-.step-indicator.done{background:rgba(0,232,162,0.2)!important;border-color:var(--accent)!important;color:var(--accent)!important;}
+.step-indicator.active{background:var(--accent)!important;color:var(--btn-text)!important;}
+.step-indicator.done{background:var(--accent-dim)!important;border-color:var(--accent)!important;color:var(--accent)!important;}
 `;
 
-const inputStyle = { width:"100%", padding:"11px 16px", background:"rgba(255,255,255,0.04)", border:"1px solid var(--border)", borderRadius:10, color:"#ddf0e8", fontSize:14, fontFamily:"'DM Sans',sans-serif", transition:"all 0.2s", boxSizing:"border-box" };
-const labelStyle = { display:"block", fontSize:11, fontWeight:600, color:"#5a8a77", marginBottom:6, fontFamily:"'DM Mono',monospace", letterSpacing:"0.06em", textTransform:"uppercase" };
+const inputStyle = { width:"100%", padding:"11px 16px", background:"rgba(255,255,255,0.04)", border:"1px solid var(--border)", borderRadius:10, color:"var(--text)", fontSize:14, fontFamily:"var(--font-body)", transition:"all 0.2s", boxSizing:"border-box" };
+const labelStyle = { display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", marginBottom:6, fontFamily:"var(--font-mono)", letterSpacing:"0.06em", textTransform:"uppercase" };
 
 export default function Register() {
   const navigate = useNavigate();
@@ -72,35 +61,35 @@ export default function Register() {
   return (
     <>
       <style>{css}</style>
-      <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", overflow:"hidden", position:"relative" }}>
+      <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", overflow:"hidden", position:"relative", transition:"background 0.35s" }}>
         {/* Left Panel */}
-        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"60px", position:"relative", overflow:"hidden" }}>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg, #061a14, #03100d)" }} />
-          <div style={{ position:"absolute", top:"15%", right:"10%", width:360, height:360, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,232,162,0.07) 0%, transparent 70%)", animation:"glow-pulse 4s ease-in-out infinite" }} />
-          <div style={{ position:"absolute", top:"50%", left:"50%", width:280, height:280, marginLeft:-140, marginTop:-140, borderRadius:"50%", border:"1px solid rgba(0,232,162,0.06)", animation:"spin-slow 40s linear infinite", pointerEvents:"none" }}>
+        <div className="auth-left-panel" style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"60px", position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg, var(--bg2), var(--bg))" }} />
+          <div style={{ position:"absolute", top:"15%", right:"10%", width:360, height:360, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,168,232,0.07) 0%, transparent 70%)", animation:"glow-pulse 4s ease-in-out infinite" }} />
+          <div style={{ position:"absolute", top:"50%", left:"50%", width:280, height:280, marginLeft:-140, marginTop:-140, borderRadius:"50%", border:"1px solid rgba(0,168,232,0.06)", animation:"spin-slow 40s linear infinite", pointerEvents:"none" }}>
             <div style={{ position:"absolute", top:-3, left:"35%", width:6, height:6, borderRadius:"50%", background:"var(--accent)", boxShadow:"0 0 10px var(--accent)" }} />
           </div>
           <div style={{ position:"relative", zIndex:1, animation:"fadeUp 0.7s ease both" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:48 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Playfair Display',serif", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px rgba(0,232,162,0.25)" }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, var(--accent2), var(--accent))", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:17, boxShadow:"0 0 24px var(--accent-glow)" }}>
                 <img src="/ingres.svg" alt="" />
               </div>
-              <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:20 }}>AquaGuide <em style={{ color:"#00e8a2" }}>AI</em></span>
+              <span style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:20 }}>AquaGuide <em style={{ color:"var(--accent)" }}>AI</em></span>
             </div>
             <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,3.5vw,46px)", fontWeight:900, lineHeight:1.15, marginBottom:20 }}>
-              Join the groundwater<br /><em style={{ color:"#00e8a2" }}>intelligence</em> network
+              Join the groundwater<br /><em style={{ color:"var(--accent)" }}>intelligence</em> network
             </h1>
-            <p style={{ color:"#5a8a77", fontSize:15, lineHeight:1.7, maxWidth:380, fontWeight:300, marginBottom:36 }}>
+            <p style={{ color:"var(--muted)", fontSize:15, lineHeight:1.7, maxWidth:380, fontWeight:300, marginBottom:36 }}>
               Access AI-powered insights on India's groundwater data. Built for researchers, policymakers, and citizens.
             </p>
             {/* Steps visual */}
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
               {[["01","Account Details","Name, email, and password"],["02","Your Profile","State and occupation for personalized data"]].map(([num,title,desc],i) => (
                 <div key={num} style={{ display:"flex", gap:14, alignItems:"flex-start", opacity: step===i+1?1:0.45, transition:"opacity 0.3s" }}>
-                  <div style={{ width:32, height:32, borderRadius:8, background: step===i+1?"var(--accent)":"rgba(0,232,162,0.1)", border:"1px solid rgba(0,232,162,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color: step===i+1?"#03100d":"#00e8a2", fontFamily:"'DM Mono',monospace", flexShrink:0, transition:"all 0.3s" }}>{num}</div>
+                  <div style={{ width:32, height:32, borderRadius:8, background: step===i+1?"var(--accent)":"var(--accent-dim)", border:"1px solid var(--glass-border)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color: step===i+1?"var(--btn-text)":"var(--accent)", fontFamily:"var(--font-mono)", flexShrink:0, transition:"all 0.3s" }}>{num}</div>
                   <div>
-                    <div style={{ fontWeight:600, fontSize:14, color:"#ddf0e8" }}>{title}</div>
-                    <div style={{ fontSize:12, color:"#5a8a77", marginTop:2 }}>{desc}</div>
+                    <div style={{ fontWeight:600, fontSize:14, color:"var(--text)" }}>{title}</div>
+                    <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>{desc}</div>
                   </div>
                 </div>
               ))}
@@ -109,13 +98,13 @@ export default function Register() {
         </div>
 
         {/* Right form panel */}
-        <div style={{ width:500, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 48px", background:"var(--bg2)", borderLeft:"1px solid var(--border)", overflowY:"auto" }}>
+        <div className="auth-right-panel" style={{ width:500, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 48px", background:"var(--bg2)", borderLeft:"1px solid var(--border)", overflowY:"auto", transition:"background 0.35s, border-color 0.35s" }}>
           <div style={{ width:"100%", animation:"fadeUp 0.6s ease 0.15s both" }}>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:28 }}>
               {[1,2].map(s => (
                 <div key={s} style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <div style={{ width:28, height:28, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, fontFamily:"'DM Mono',monospace", transition:"all 0.3s", background: step>s?"rgba(0,232,162,0.15)": step===s?"var(--accent)":"transparent", color: step>s?"var(--accent)":step===s?"#03100d":"var(--muted)", borderColor: step>=s?"rgba(0,232,162,0.4)":"var(--border)" }}>{step>s?"✓":s}</div>
-                  <span style={{ fontSize:12, color: step===s?"var(--text)":"var(--muted)", fontFamily:"'DM Mono',monospace" }}>{["Account","Profile"][s-1]}</span>
+                  <div style={{ width:28, height:28, borderRadius:8, border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, fontFamily:"var(--font-mono)", transition:"all 0.3s", background: step>s?"var(--accent-dim)": step===s?"var(--accent)":"transparent", color: step>s?"var(--accent)":step===s?"var(--btn-text)":"var(--muted)", borderColor: step>=s?"var(--accent)":"var(--border)" }}>{step>s?"✓":s}</div>
+                  <span style={{ fontSize:12, color: step===s?"var(--text)":"var(--muted)", fontFamily:"var(--font-mono)" }}>{["Account","Profile"][s-1]}</span>
                   {s<2 && <div style={{ width:24, height:1, background:"var(--border)", margin:"0 4px" }} />}
                 </div>
               ))}
@@ -139,7 +128,7 @@ export default function Register() {
                 </div>
                 <label style={labelStyle}>Confirm Password</label>
                 <input className="auth-input" style={{ ...inputStyle, marginBottom:24 }} type={showPw?"text":"password"} placeholder="Re-enter password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} required />
-                <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"#03100d", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.25s", boxShadow:"0 0 24px rgba(0,232,162,0.25)", marginBottom:16 }} type="submit">
+                <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"var(--btn-text)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)", marginBottom:16 }} type="submit">
                   Continue →
                 </button>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, color:"var(--muted)", fontSize:12 }}>
@@ -158,20 +147,20 @@ export default function Register() {
               <form onSubmit={handleRegister}>
                 <label style={labelStyle}>Your State / UT</label>
                 <select className="auth-select" style={{ ...inputStyle, marginBottom:16, appearance:"none", cursor:"pointer" }} value={state} onChange={e=>setState(e.target.value)} required>
-                  <option value="" style={{ background:"#0a2318" }}>Select your state</option>
-                  {STATES.map(s => <option key={s} value={s} style={{ background:"#0a2318" }}>{s}</option>)}
+                <option value="" style={{ background:"var(--surface)" }}>Select your state</option>
+                  {STATES.map(s => <option key={s} value={s} style={{ background:"var(--surface)" }}>{s}</option>)}
                 </select>
                 <label style={labelStyle}>Occupation</label>
                 <select className="auth-select" style={{ ...inputStyle, marginBottom:28, appearance:"none", cursor:"pointer" }} value={occupation} onChange={e=>setOccupation(e.target.value)} required>
-                  <option value="" style={{ background:"#0a2318" }}>Select your occupation</option>
-                  {OCCUPATIONS.map(o => <option key={o} value={o} style={{ background:"#0a2318" }}>{o}</option>)}
+                <option value="" style={{ background:"var(--surface)" }}>Select your occupation</option>
+                  {OCCUPATIONS.map(o => <option key={o} value={o} style={{ background:"var(--surface)" }}>{o}</option>)}
                 </select>
-                <div style={{ background:"var(--accent-dim)", border:"1px solid rgba(0,232,162,0.18)", borderRadius:10, padding:"12px 16px", marginBottom:24, fontSize:12, color:"var(--muted)" }}>
+                <div style={{ background:"var(--accent-dim)", border:"1px solid rgba(0,168,232,0.18)", borderRadius:10, padding:"12px 16px", marginBottom:24, fontSize:12, color:"var(--muted)" }}>
                   <span style={{ color:"var(--accent)", fontWeight:600 }}>ℹ Why we ask:</span> Your state and occupation help us surface the most relevant groundwater data for your region and use case.
                 </div>
                 <div style={{ display:"flex", gap:12 }}>
                   <button type="button" onClick={()=>{setStep(1);setError("");}} style={{ flex:1, padding:13, background:"transparent", border:"1px solid var(--border)", borderRadius:10, color:"var(--muted)", fontSize:14, fontWeight:500, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.25s" }}>← Back</button>
-                  <button className="auth-btn-primary" style={{ flex:2, padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"#03100d", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", transition:"all 0.25s", boxShadow:"0 0 24px rgba(0,232,162,0.25)" }} type="submit" disabled={loading}>
+                  <button className="auth-btn-primary" style={{ flex:2, padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"var(--btn-text)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)" }} type="submit" disabled={loading}>
                     {loading ? "Creating account..." : "🚀 Create Account"}
                   </button>
                 </div>

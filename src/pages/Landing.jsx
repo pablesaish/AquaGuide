@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle";
+import { useTheme } from "../components/ThemeContext";
 
 /* ══════════════════════════════════════════════════════════
    AquaGuide AI — Landing Page
@@ -9,40 +11,6 @@ import { useNavigate } from "react-router-dom";
 ══════════════════════════════════════════════════════════ */
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
-  :root {
-    --bg: #03100d;
-    --bg2: #061a14;
-    --surface: #0a2318;
-    --border: #163d2e;
-    --accent: #00e8a2;
-    --accent2: #00b87a;
-    --accent-dim: rgba(0,232,162,0.12);
-    --accent-glow: rgba(0,232,162,0.25);
-    --warn: #f5a623;
-    --danger: #e84040;
-    --semi: #f0dc3a;
-    --text: #ddf0e8;
-    --muted: #5a8a77;
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    overflow-x: hidden;
-  }
-
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--accent2); border-radius: 2px; }
-
   /* ── Scroll progress bar ── */
   #scroll-bar {
     position: fixed; top: 0; left: 0; height: 2px; z-index: 9999;
@@ -152,7 +120,7 @@ const styles = `
     content: '';
     position: absolute; top: 0; left: -100%;
     width: 60%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0,232,162,0.04), transparent);
+    background: linear-gradient(90deg, transparent, rgba(0,168,232,0.04), transparent);
     transition: left 0.6s ease;
     pointer-events: none;
   }
@@ -220,6 +188,7 @@ function CountUp({ to, suffix = "" }) {
 }
 
 export default function Landing() {
+  const { theme } = useTheme();
   const navigate = useNavigate();
 
   /* ── Scroll progress bar ── */
@@ -309,7 +278,7 @@ export default function Landing() {
         if (p.y > canvas.height) p.y = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0,232,162,${p.alpha})`;
+        ctx.fillStyle = `rgba(0,168,232,${p.alpha})`;
         ctx.fill();
       });
       for (let i = 0; i < particles.length; i++) {
@@ -321,7 +290,7 @@ export default function Landing() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0,232,162,${0.06 * (1 - d / 100)})`;
+            ctx.strokeStyle = `rgba(0,168,232,${0.06 * (1 - d / 100)})`;
             ctx.lineWidth   = 0.6;
             ctx.stroke();
           }
@@ -346,7 +315,7 @@ export default function Landing() {
   const [hoveredState, setHoveredState] = useState(null);
 
   /* ── Shared data ── */
-  const statusColors = { safe: "#00e8a2", semi: "#f0dc3a", critical: "#f5a623", over: "#e84040" };
+  const statusColors = { safe: "var(--accent)", semi: "#f0dc3a", critical: "#f5a623", over: "#e84040" };
   const statusLabels = { safe: "Safe", semi: "Semi-Critical", critical: "Critical", over: "Over-Exploited" };
 
   const chatMessages = [
@@ -381,7 +350,7 @@ export default function Landing() {
   ];
 
   const tickerItems  = ["Safe","Semi-Critical","Critical","Over-Exploited","Maharashtra","Rajasthan","Gujarat","Tamil Nadu","Punjab","Uttar Pradesh","Extraction Data","Recharge Rates","Block-Level Analysis","AI-Powered Queries"];
-  const tickerColors = { "Safe":"#00e8a2","Semi-Critical":"#f0dc3a","Critical":"#f5a623","Over-Exploited":"#e84040" };
+  const tickerColors = { "Safe":"var(--accent)","Semi-Critical":"#f0dc3a","Critical":"#f5a623","Over-Exploited":"#e84040" };
 
   /* ── Animated progress bars ── */
   const [statsRef, statsInView] = useInView();
@@ -400,7 +369,7 @@ export default function Landing() {
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "16px 56px",
-        background: scrolled ? "rgba(3,16,13,0.92)" : "transparent",
+        background: scrolled ? (theme === 'dark' ? "rgba(3,13,20,0.92)" : "rgba(240,244,248,0.92)") : "transparent",
         backdropFilter: scrolled ? "blur(20px)" : "none",
         borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
         transition: "all 0.4s cubic-bezier(.22,1,.36,1)",
@@ -411,7 +380,7 @@ export default function Landing() {
             width: 36, height: 36, borderRadius: 10,
             background: "linear-gradient(135deg, var(--accent2), var(--accent))",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--font-display)", fontWeight: 900, color: "#03100d", fontSize: 15,
+            fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--btn-text)", fontSize: 15,
             boxShadow: "0 0 18px var(--accent-glow)",
             transition: "transform 0.3s, box-shadow 0.3s",
           }}
@@ -429,7 +398,8 @@ export default function Landing() {
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <ThemeToggle />
           <button className="btn-ripple" style={{
             padding: "9px 22px", borderRadius: 8, border: "1px solid var(--border)",
             background: "transparent", color: "var(--text)", fontSize: 14, fontWeight: 500,
@@ -441,7 +411,7 @@ export default function Landing() {
           >Login</button>
           <button className="btn-ripple" style={{
             padding: "9px 22px", borderRadius: 8, border: "none",
-            background: "var(--accent)", color: "#03100d", fontSize: 14, fontWeight: 600,
+            background: "var(--accent)", color: "var(--btn-text)", fontSize: 14, fontWeight: 600,
             cursor: "pointer", transition: "all 0.25s", fontFamily: "var(--font-body)",
             boxShadow: "0 0 20px var(--accent-glow)",
           }}
@@ -467,7 +437,7 @@ export default function Landing() {
         <div style={{
           position: "absolute", pointerEvents: "none",
           width: 500, height: 500, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,232,162,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(0,168,232,0.06) 0%, transparent 70%)",
           left: `calc(${mouse.x}% - 250px)`,
           top:  `calc(${mouse.y}% - 250px)`,
           transition: "left 0.4s ease, top 0.4s ease",
@@ -477,26 +447,26 @@ export default function Landing() {
         <div style={{
           position: "absolute", top: `calc(20% - ${parallaxY * 0.3}px)`, right: "10%",
           width: 600, height: 600, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,232,162,0.07) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(0,168,232,0.07) 0%, transparent 70%)",
           pointerEvents: "none", transition: "top 0.05s linear",
           animation: "glow-pulse 4s ease-in-out infinite",
         }} />
         <div style={{
           position: "absolute", bottom: `calc(10% + ${parallaxY * 0.15}px)`, left: "5%",
           width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,184,122,0.05) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(0,120,212,0.05) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
 
         {/* Orbiting ring */}
         <div style={{
           position: "absolute", top: "50%", right: "8%", width: 340, height: 340, borderRadius: "50%",
-          border: "1px solid rgba(0,232,162,0.08)", transform: "translateY(-50%)",
+          border: "1px solid rgba(0,168,232,0.08)", transform: "translateY(-50%)",
           animation: "spin-slow 40s linear infinite", pointerEvents: "none",
         }}>
           <div style={{ position: "absolute", top: -1, left: "40%", width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", boxShadow: "0 0 12px var(--accent)" }} />
         </div>
-        <div style={{ position: "absolute", top: "50%", right: "8%", width: 240, height: 240, borderRadius: "50%", border: "1px solid rgba(0,232,162,0.05)", transform: "translateY(-50%)", pointerEvents: "none", animation: "spin-slow 28s linear infinite reverse" }} />
+        <div style={{ position: "absolute", top: "50%", right: "8%", width: 240, height: 240, borderRadius: "50%", border: "1px solid rgba(0,168,232,0.05)", transform: "translateY(-50%)", pointerEvents: "none", animation: "spin-slow 28s linear infinite reverse" }} />
 
         {/* Hero content — staggered fade-up on mount */}
         <div style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
@@ -504,7 +474,7 @@ export default function Landing() {
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "6px 14px", borderRadius: 20,
-              background: "var(--accent-dim)", border: "1px solid rgba(0,232,162,0.25)",
+              background: "var(--accent-dim)", border: "1px solid rgba(0,168,232,0.25)",
               fontSize: 12, fontWeight: 600, color: "var(--accent)",
               letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 28,
             }}>
@@ -523,7 +493,7 @@ export default function Landing() {
           </p>
 
           {/* Typewriter */}
-          <div style={{ marginBottom: 40, animation: "fadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.42s both", background: "var(--accent-dim)", border: "1px solid rgba(0,232,162,0.18)", borderRadius: 10, padding: "12px 16px", display: "inline-block" }}>
+          <div style={{ marginBottom: 40, animation: "fadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.42s both", background: "var(--accent-dim)", border: "1px solid rgba(0,168,232,0.18)", borderRadius: 10, padding: "12px 16px", display: "inline-block" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--accent)" }}>
               <span style={{ color: "var(--muted)", marginRight: 8 }}>›</span>
               {twDisplayed}
@@ -535,7 +505,7 @@ export default function Landing() {
           <div style={{ display: "flex", gap: 14, animation: "fadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.52s both" }}>
             <button className="btn-ripple" style={{
               padding: "14px 32px", borderRadius: 10, border: "none",
-              background: "var(--accent)", color: "#03100d", fontSize: 15, fontWeight: 700,
+              background: "var(--accent)", color: "var(--btn-text)", fontSize: 15, fontWeight: 700,
               cursor: "pointer", fontFamily: "var(--font-body)",
               boxShadow: "0 0 28px var(--accent-glow)", transition: "all 0.3s cubic-bezier(.22,1,.36,1)",
             }}
@@ -607,8 +577,8 @@ export default function Landing() {
                   ["Data Verified",          "Sourced from CGWB annual assessments"],
                 ].map(([title, desc]) => (
                   <div key={title} style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start" }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent-dim)", border: "1px solid rgba(0,232,162,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2, transition: "background 0.3s, transform 0.3s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,232,162,0.2)"; e.currentTarget.style.transform = "scale(1.15)"; }}
+                    <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent-dim)", border: "1px solid rgba(0,168,232,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2, transition: "background 0.3s, transform 0.3s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,168,232,0.2)"; e.currentTarget.style.transform = "scale(1.15)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-dim)"; e.currentTarget.style.transform = ""; }}
                     >
                       <svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4L4 7L10 1" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round"/></svg>
@@ -624,12 +594,12 @@ export default function Landing() {
 
             {/* Chat UI — slide in from right */}
             <div className="reveal-right" style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.4)", transition: "box-shadow 0.4s, transform 0.4s" }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 32px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,232,162,0.1)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 32px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,168,232,0.1)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 24px 80px rgba(0,0,0,0.4)"; e.currentTarget.style.transform = ""; }}
             >
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 10, background: "rgba(0,232,162,0.03)" }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 10, background: "rgba(0,168,232,0.03)" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, var(--accent2), var(--accent))", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#03100d"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="var(--bg)"/></svg>
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>AquaGuide AI Assistant</div>
@@ -647,7 +617,7 @@ export default function Landing() {
                       borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
                       background: m.role === "user" ? "var(--accent)" : "rgba(255,255,255,0.04)",
                       border: m.role === "ai" ? "1px solid var(--border)" : "none",
-                      color: m.role === "user" ? "#03100d" : "var(--text)",
+                      color: m.role === "user" ? "var(--bg)" : "var(--text)",
                       fontSize: 13, lineHeight: 1.55, fontWeight: m.role === "user" ? 500 : 400,
                       transition: "transform 0.2s",
                     }}
@@ -657,7 +627,7 @@ export default function Landing() {
                       {m.text}
                       {m.data && (
                         <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                          {[["Safe","#00e8a2","12"],["Semi-Crit.","#f0dc3a","8"],["Critical","#f5a623","3"],["Over-Exp.","#e84040","23"]].map(([l, c, n]) => (
+                          {[["Safe","var(--accent)","12"],["Semi-Crit.","#f0dc3a","8"],["Critical","#f5a623","3"],["Over-Exp.","#e84040","23"]].map(([l, c, n]) => (
                             <div key={l} style={{ flex: 1, background: `${c}16`, border: `1px solid ${c}33`, borderRadius: 6, padding: "5px 4px", textAlign: "center", transition: "background 0.2s, transform 0.2s", cursor: "default" }}
                               onMouseEnter={e => { e.currentTarget.style.background = `${c}28`; e.currentTarget.style.transform = "scale(1.06)"; }}
                               onMouseLeave={e => { e.currentTarget.style.background = `${c}16`; e.currentTarget.style.transform = ""; }}
@@ -672,7 +642,7 @@ export default function Landing() {
                         <div style={{ marginTop: 10, background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 8px", display: "flex", alignItems: "flex-end", gap: 4, height: 56 }}>
                           {[112,118,128,145,158,164].map((v, i) => (
                             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                              <div style={{ width: "100%", height: `${(v - 100) * 1.5}px`, background: v > 150 ? "#e84040" : v > 130 ? "#f5a623" : "#00e8a2", borderRadius: "3px 3px 0 0", opacity: 0.85, animation: `bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i * 0.1}s both`, transition: "opacity 0.2s", cursor: "default" }}
+                              <div style={{ width: "100%", height: `${(v - 100) * 1.5}px`, background: v > 150 ? "#e84040" : v > 130 ? "#f5a623" : "var(--accent)", borderRadius: "3px 3px 0 0", opacity: 0.85, animation: `bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i * 0.1}s both`, transition: "opacity 0.2s", cursor: "default" }}
                                 onMouseEnter={e => e.currentTarget.style.opacity = "1"}
                                 onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}
                               />
@@ -690,14 +660,14 @@ export default function Landing() {
               </div>
               <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", gap: 10, alignItems: "center" }}>
                 <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: 10, padding: "9px 14px", fontSize: 13, color: "var(--muted)", transition: "border-color 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,232,162,0.3)"}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,168,232,0.3)"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                 >Ask about groundwater in any district…</div>
                 <button style={{ width: 36, height: 36, borderRadius: 9, background: "var(--accent)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s, box-shadow 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = "0 0 14px var(--accent-glow)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="#03100d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="var(--bg)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
               </div>
             </div>
@@ -722,12 +692,12 @@ export default function Landing() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 40, alignItems: "start" }}>
             <div className="reveal-left" style={{ position: "relative", background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", height: 420, boxShadow: "0 24px 60px rgba(0,0,0,0.35)", transition: "box-shadow 0.4s" }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,232,162,0.08)"}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,168,232,0.08)"}
               onMouseLeave={e => e.currentTarget.style.boxShadow = "0 24px 60px rgba(0,0,0,0.35)"}
             >
               {Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 20}%`, height: 1, background: "rgba(255,255,255,0.03)" }} />)}
               {Array.from({ length: 8 }).map((_, i) => <div key={i} style={{ position: "absolute", top: 0, bottom: 0, left: `${i * 14.28}%`, width: 1, background: "rgba(255,255,255,0.03)" }} />)}
-              <div style={{ position: "absolute", left: "10%", right: "15%", top: "10%", bottom: "10%", background: "linear-gradient(135deg, rgba(0,232,162,0.04), rgba(0,100,60,0.06))", borderRadius: "40% 30% 50% 35%", border: "1px solid rgba(0,232,162,0.1)" }} />
+              <div style={{ position: "absolute", left: "10%", right: "15%", top: "10%", bottom: "10%", background: "linear-gradient(135deg, rgba(0,168,232,0.04), rgba(0,100,60,0.06))", borderRadius: "40% 30% 50% 35%", border: "1px solid rgba(0,168,232,0.1)" }} />
 
               {mapStates.map(s => (
                 <div key={s.name} style={{ position: "absolute", left: s.x, top: s.y, transform: "translate(-50%,-50%)", zIndex: 2 }}
@@ -780,7 +750,7 @@ export default function Landing() {
                   </span>
                 ))}
               </div>
-              <div style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,232,162,0.12)", border: "1px solid rgba(0,232,162,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>
+              <div style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,168,232,0.12)", border: "1px solid rgba(0,168,232,0.2)", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>
                 LIVE · 2023 Data
               </div>
             </div>
@@ -817,9 +787,9 @@ export default function Landing() {
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "20px" }}>
                 <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)", marginBottom: 14, letterSpacing: "0.06em" }}>QUERY THE MAP</div>
                 {["Show all over-exploited zones","Gujarat groundwater status","Trend: 2015 to 2023"].map((q, i) => (
-                  <div key={q} style={{ padding: "9px 12px", marginBottom: 8, background: "rgba(0,232,162,0.04)", border: "1px solid rgba(0,232,162,0.12)", borderRadius: 8, fontSize: 12, color: "var(--muted)", cursor: "pointer", transition: "all 0.25s cubic-bezier(.22,1,.36,1)", fontFamily: "var(--font-mono)", animation: `fadeUp 0.4s ease ${i * 0.1}s both` }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "rgba(0,232,162,0.35)"; e.currentTarget.style.background = "rgba(0,232,162,0.08)"; e.currentTarget.style.transform = "translateX(4px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "rgba(0,232,162,0.12)"; e.currentTarget.style.background = "rgba(0,232,162,0.04)"; e.currentTarget.style.transform = ""; }}
+                  <div key={q} style={{ padding: "9px 12px", marginBottom: 8, background: "rgba(0,168,232,0.04)", border: "1px solid rgba(0,168,232,0.12)", borderRadius: 8, fontSize: 12, color: "var(--muted)", cursor: "pointer", transition: "all 0.25s cubic-bezier(.22,1,.36,1)", fontFamily: "var(--font-mono)", animation: `fadeUp 0.4s ease ${i * 0.1}s both` }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "rgba(0,168,232,0.35)"; e.currentTarget.style.background = "rgba(0,168,232,0.08)"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "rgba(0,168,232,0.12)"; e.currentTarget.style.background = "rgba(0,168,232,0.04)"; e.currentTarget.style.transform = ""; }}
                   >{q} →</div>
                 ))}
               </div>
@@ -842,7 +812,7 @@ export default function Landing() {
           <div className="stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
             {features.map((f, i) => (
               <div key={i} className="card-shimmer" style={{ padding: "28px 26px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", transition: "all 0.35s cubic-bezier(.22,1,.36,1)", cursor: "default" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,232,162,0.35)"; e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 50px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,232,162,0.06)"; e.currentTarget.style.background = "#0d2a1f"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,168,232,0.35)"; e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 50px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,168,232,0.06)"; e.currentTarget.style.background = "var(--surface-hover)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "var(--surface)"; }}
               >
                 <div style={{ fontSize: 32, marginBottom: 16, display: "inline-block", transition: "transform 0.3s" }}
@@ -861,7 +831,7 @@ export default function Landing() {
           CTA
       ════════════════════════════════════ */}
       <section style={{ padding: "100px 56px", background: "var(--bg)", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,232,162,0.06) 0%, transparent 65%)", pointerEvents: "none", animation: "glow-pulse 5s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,232,0.06) 0%, transparent 65%)", pointerEvents: "none", animation: "glow-pulse 5s ease-in-out infinite" }} />
         <div className="reveal-scale" style={{ position: "relative", zIndex: 1, maxWidth: 640, margin: "0 auto" }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 20 }}>
             India's water future starts with<br /><em style={{ color: "var(--accent)" }}>better questions.</em>
@@ -870,7 +840,7 @@ export default function Landing() {
             Ask AquaGuide AI anything about groundwater across India's 7,000+ blocks. Built for researchers, policymakers, and citizens.
           </p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-            <button className="btn-ripple" style={{ padding: "15px 38px", borderRadius: 12, border: "none", background: "var(--accent)", color: "#03100d", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 0 40px var(--accent-glow)", transition: "all 0.3s cubic-bezier(.22,1,.36,1)" }}
+            <button className="btn-ripple" style={{ padding: "15px 38px", borderRadius: 12, border: "none", background: "var(--accent)", color: "var(--btn-text)", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 0 40px var(--accent-glow)", transition: "all 0.3s cubic-bezier(.22,1,.36,1)" }}
               onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px) scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 50px var(--accent-glow)"; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 0 40px var(--accent-glow)"; }}
             >Start for Free →</button>
@@ -895,7 +865,7 @@ export default function Landing() {
       ════════════════════════════════════ */}
       <footer style={{ padding: "36px 56px", borderTop: "1px solid var(--border)", background: "var(--bg2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, var(--accent2), var(--accent))", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 900, color: "#03100d", fontSize: 11, transition: "transform 0.3s" }}
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, var(--accent2), var(--accent))", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--btn-text)", fontSize: 11, transition: "transform 0.3s" }}
             onMouseEnter={e => e.currentTarget.style.transform = "rotate(10deg) scale(1.1)"}
             onMouseLeave={e => e.currentTarget.style.transform = ""}
           >IN</div>

@@ -9,20 +9,7 @@ function getErrorMessage(code) {
   return map[code] || "Something went wrong. Please try again.";
 }
 
-const css = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-:root{--bg:#03100d;--bg2:#061a14;--surface:#0a2318;--border:#163d2e;--accent:#00e8a2;--accent2:#00b87a;--accent-dim:rgba(0,232,162,0.12);--accent-glow:rgba(0,232,162,0.25);--text:#ddf0e8;--muted:#5a8a77;--danger:#e84040;--font-display:'Playfair Display',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--font-body);}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
-@keyframes spin-slow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes glow-pulse{0%,100%{opacity:0.06;}50%{opacity:0.13;}}
-.auth-input:focus{border-color:rgba(0,232,162,0.4)!important;outline:none;box-shadow:0 0 0 3px rgba(0,232,162,0.07);}
-.auth-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow)!important;}
-.auth-btn-ghost:hover{border-color:rgba(0,232,162,0.4)!important;color:var(--accent)!important;background:var(--accent-dim)!important;transform:translateY(-1px);}
-`;
+/* Page-specific styles only — global theme is in index.css */
 
 export default function Login() {
   const navigate = useNavigate();
@@ -56,21 +43,20 @@ export default function Login() {
 
   return (
     <>
-      <style>{css}</style>
-      <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", overflow:"hidden", position:"relative" }}>
+      <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", overflow:"hidden", position:"relative", transition:"background 0.35s" }}>
 
         {/* Left decorative panel */}
-        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"60px", position:"relative", overflow:"hidden" }}>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg, #061a14 0%, #03100d 100%)" }} />
-          <div style={{ position:"absolute", top:"20%", left:"10%", width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,232,162,0.07) 0%, transparent 70%)", animation:"glow-pulse 4s ease-in-out infinite" }} />
-          <div style={{ position:"absolute", bottom:"15%", right:"5%", width:280, height:280, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,184,122,0.05) 0%, transparent 70%)", animation:"glow-pulse 5s ease-in-out infinite 1s" }} />
+        <div className="auth-left-panel" style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"60px", position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%)" }} />
+          <div style={{ position:"absolute", top:"20%", left:"10%", width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,168,232,0.07) 0%, transparent 70%)", animation:"glow-pulse 4s ease-in-out infinite" }} />
+          <div style={{ position:"absolute", bottom:"15%", right:"5%", width:280, height:280, borderRadius:"50%", background:"radial-gradient(circle, rgba(0,120,212,0.05) 0%, transparent 70%)", animation:"glow-pulse 5s ease-in-out infinite 1s" }} />
           {/* Orbiting ring */}
-          <div style={{ position:"absolute", top:"50%", left:"50%", width:320, height:320, marginLeft:-160, marginTop:-160, borderRadius:"50%", border:"1px solid rgba(0,232,162,0.07)", animation:"spin-slow 40s linear infinite", pointerEvents:"none" }}>
+          <div style={{ position:"absolute", top:"50%", left:"50%", width:320, height:320, marginLeft:-160, marginTop:-160, borderRadius:"50%", border:"1px solid rgba(0,168,232,0.07)", animation:"spin-slow 40s linear infinite", pointerEvents:"none" }}>
             <div style={{ position:"absolute", top:-3, left:"40%", width:6, height:6, borderRadius:"50%", background:"var(--accent)", boxShadow:"0 0 10px var(--accent)" }} />
           </div>
           <div style={{ position:"relative", zIndex:1, animation:"fadeUp 0.8s ease both" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:48 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, var(--accent2), var(--accent))", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px var(--accent-glow)" }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, var(--accent2), var(--accent))", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--bg)", fontSize:17, boxShadow:"0 0 24px var(--accent-glow)" }}>
                 <img src="/ingres.svg" alt="" />
               </div>
               <span style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:20, letterSpacing:"0.03em" }}>AquaGuide<em style={{ color:"var(--accent)" }}>AI</em></span>
@@ -91,7 +77,7 @@ export default function Login() {
             </div>
             <div style={{ marginTop:48, display:"flex", gap:16, flexWrap:"wrap" }}>
               {["Safe","Semi-Critical","Critical","Over-Exploited"].map((s,i) => {
-                const c = ["#00e8a2","#f0dc3a","#f5a623","#e84040"][i];
+                const c = ["var(--accent)","#f0dc3a","#f5a623","#e84040"][i];
                 return <span key={s} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, fontFamily:"var(--font-mono)", color:c, letterSpacing:"0.06em" }}><span style={{ width:6, height:6, borderRadius:"50%", background:c, display:"inline-block" }} />{s}</span>;
               })}
             </div>
@@ -99,7 +85,7 @@ export default function Login() {
         </div>
 
         {/* Right auth panel */}
-        <div style={{ width:480, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 48px", background:"var(--bg2)", borderLeft:"1px solid var(--border)" }}>
+        <div className="auth-right-panel" style={{ width:480, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 48px", background:"var(--bg2)", borderLeft:"1px solid var(--border)", transition:"background 0.35s, border-color 0.35s" }}>
           <div style={{ width:"100%", animation:"fadeUp 0.6s ease 0.15s both" }}>
 
             {mode === "reset" ? (
@@ -110,11 +96,11 @@ export default function Login() {
                   <p style={{ color:"var(--muted)", fontSize:14 }}>Enter your email and we'll send a reset link.</p>
                 </div>
                 {error && <div style={{ background:"rgba(232,64,64,0.1)", border:"1px solid rgba(232,64,64,0.25)", borderRadius:8, padding:"10px 14px", color:"#fca5a5", fontSize:13, marginBottom:16 }}>⚠ {error}</div>}
-                {success && <div style={{ background:"rgba(0,232,162,0.1)", border:"1px solid rgba(0,232,162,0.2)", borderRadius:8, padding:"10px 14px", color:"var(--accent)", fontSize:13, marginBottom:16 }}>✓ {success}</div>}
+                {success && <div style={{ background:"rgba(0,168,232,0.1)", border:"1px solid rgba(0,168,232,0.2)", borderRadius:8, padding:"10px 14px", color:"var(--accent)", fontSize:13, marginBottom:16 }}>✓ {success}</div>}
                 <form onSubmit={handleReset}>
                   <label style={{ display:"block", fontSize:12, fontWeight:600, color:"var(--muted)", marginBottom:6, fontFamily:"var(--font-mono)", letterSpacing:"0.06em", textTransform:"uppercase" }}>Email Address</label>
                   <input className="auth-input" style={{ width:"100%", padding:"12px 16px", background:"rgba(255,255,255,0.04)", border:"1px solid var(--border)", borderRadius:10, color:"var(--text)", fontSize:14, fontFamily:"var(--font-body)", marginBottom:20, transition:"all 0.2s", boxSizing:"border-box" }} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required />
-                  <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"#03100d", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)" }} type="submit" disabled={loading}>
+                  <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"var(--btn-text)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)" }} type="submit" disabled={loading}>
                     {loading ? "Sending..." : "📧 Send Reset Email"}
                   </button>
                 </form>
@@ -127,7 +113,7 @@ export default function Login() {
                   <p style={{ color:"var(--muted)", fontSize:14 }}>Sign in to continue to INGRES AI</p>
                 </div>
                 {error && <div style={{ background:"rgba(232,64,64,0.1)", border:"1px solid rgba(232,64,64,0.25)", borderRadius:8, padding:"10px 14px", color:"#fca5a5", fontSize:13, marginBottom:16 }}>⚠ {error}</div>}
-                {success && <div style={{ background:"rgba(0,232,162,0.1)", border:"1px solid rgba(0,232,162,0.2)", borderRadius:8, padding:"10px 14px", color:"var(--accent)", fontSize:13, marginBottom:16 }}>✓ {success}</div>}
+                {success && <div style={{ background:"rgba(0,168,232,0.1)", border:"1px solid rgba(0,168,232,0.2)", borderRadius:8, padding:"10px 14px", color:"var(--accent)", fontSize:13, marginBottom:16 }}>✓ {success}</div>}
                 <form onSubmit={handleLogin}>
                   <label style={{ display:"block", fontSize:12, fontWeight:600, color:"var(--muted)", marginBottom:6, fontFamily:"var(--font-mono)", letterSpacing:"0.06em", textTransform:"uppercase" }}>Email Address</label>
                   <input className="auth-input" style={{ width:"100%", padding:"12px 16px", background:"rgba(255,255,255,0.04)", border:"1px solid var(--border)", borderRadius:10, color:"var(--text)", fontSize:14, fontFamily:"var(--font-body)", marginBottom:16, transition:"all 0.2s", boxSizing:"border-box" }} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required />
@@ -137,8 +123,8 @@ export default function Login() {
                     <button type="button" onClick={()=>setShowPw(!showPw)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:15 }}>{showPw?"🙈":"👁️"}</button>
                   </div>
                   <button type="button" onClick={()=>{setMode("reset");clear();}} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", fontSize:12, fontFamily:"var(--font-mono)", display:"block", textAlign:"right", width:"100%", marginBottom:20, textDecoration:"underline" }}>Forgot password?</button>
-                  <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"#03100d", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)", marginBottom:16 }} type="submit" disabled={loading}>
-                    {loading ? "Signing in..." : "🔐 Sign In"}
+                  <button className="auth-btn-primary" style={{ width:"100%", padding:13, background:"var(--accent)", border:"none", borderRadius:10, color:"var(--btn-text)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", transition:"all 0.25s", boxShadow:"0 0 24px var(--accent-glow)", marginBottom:16 }} type="submit" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
                   </button>
                 </form>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, color:"var(--muted)", fontSize:12 }}>

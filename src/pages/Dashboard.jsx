@@ -5,23 +5,12 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import Sidebar from "../components/Sidebar";
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-:root{--bg:#03100d;--bg2:#061a14;--surface:#0a2318;--border:#163d2e;--accent:#00e8a2;--accent2:#00b87a;--accent-dim:rgba(0,232,162,0.12);--accent-glow:rgba(0,232,162,0.25);--text:#ddf0e8;--muted:#5a8a77;--warn:#f5a623;--danger:#e84040;--semi:#f0dc3a;--font-display:'Playfair Display',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);height:100%;}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
-@keyframes bar-grow{from{width:0;}}
-@keyframes glow-pulse{0%,100%{opacity:0.06;}50%{opacity:0.13;}}
-.nav-item:hover{background:var(--accent-dim)!important;color:var(--accent)!important;}
-.nav-item.active{background:var(--accent-dim)!important;color:var(--accent)!important;border-right:2px solid var(--accent);}
-.stat-card:hover{border-color:rgba(0,232,162,0.3)!important;transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.3)!important;}
-.quick-action:hover{border-color:rgba(0,232,162,0.35)!important;background:#0d2a1f!important;transform:translateY(-4px);}
-.chat-chip:hover{border-color:rgba(0,232,162,0.35)!important;color:var(--accent)!important;background:rgba(0,232,162,0.08)!important;transform:translateX(4px);}
+.stat-card:hover{border-color:rgba(0,168,232,0.3)!important;transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.3)!important;}
+.quick-action:hover{border-color:rgba(0,168,232,0.35)!important;background:var(--surface-hover)!important;transform:translateY(-4px);}
+.chat-chip:hover{border-color:rgba(0,168,232,0.35)!important;color:var(--accent)!important;background:var(--accent-dim)!important;transform:translateX(4px);}
 `;
 
-const statusColors = { safe:"#00e8a2", semi:"#f0dc3a", critical:"#f5a623", over:"#e84040" };
+const statusColors = { safe:"var(--accent)", semi:"#f0dc3a", critical:"#f5a623", over:"#e84040" };
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -46,10 +35,10 @@ export default function Dashboard() {
   const handleLogout = async () => { await signOut(auth); navigate("/login"); };
 
   const stats = data ? [
-    { label:"Total Districts", value: data.national.totalDistricts.toLocaleString(), sub:"Assessed globally", color:"#00e8a2", icon:"🔷" },
+    { label:"Total Districts", value: data.national.totalDistricts.toLocaleString(), sub:"Assessed globally", color:"var(--accent)", icon:"🔷" },
     { label:"Over-Exploited", value: data.national.overExploited.toLocaleString(), sub:"Need urgent action", color:"#e84040", icon:"🔴" },
     { label:"Critical Zones", value: data.national.critical.toLocaleString(), sub:"Under stress", color:"#f5a623", icon:"🟠" },
-    { label:"Safe Districts", value: data.national.safe.toLocaleString(), sub:"Within limits", color:"#00e8a2", icon:"🟢" },
+    { label:"Safe Districts", value: data.national.safe.toLocaleString(), sub:"Within limits", color:"var(--accent)", icon:"🟢" },
   ] : [];
 
   const recentChats = [
@@ -60,14 +49,14 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { icon:"💬", label:"Ask AI", desc:"Query groundwater data", path:"/chatbot", accent:"#00e8a2" },
+    { icon:"💬", label:"Ask AI", desc:"Query groundwater data", path:"/chatbot", accent:"var(--accent)" },
     { icon:"🗺️", label:"View Map", desc:"India block-level map", path:"/maps", accent:"#f0dc3a" },
     { icon:"📊", label:"Explore Data", desc:"Filter by state/district", path:"/data", accent:"#f5a623" },
     { icon:"📄", label:"My Reports", desc:"View saved reports", path:"/reports", accent:"#60a5fa" },
   ];
 
   const nationalData = data ? [
-    { label:"Safe",           pct: Math.round(data.national.safe / data.national.totalDistricts * 100), count: data.national.safe.toLocaleString(), color:"#00e8a2" },
+    { label:"Safe",           pct: Math.round(data.national.safe / data.national.totalDistricts * 100), count: data.national.safe.toLocaleString(), color:"var(--accent)" },
     { label:"Semi-Critical",  pct: Math.round(data.national.semiCritical / data.national.totalDistricts * 100), count: data.national.semiCritical.toLocaleString(),   color:"#f0dc3a" },
     { label:"Critical",       pct: Math.round(data.national.critical / data.national.totalDistricts * 100),  count: data.national.critical.toLocaleString(),   color:"#f5a623" },
     { label:"Over-Exploited", pct: Math.round(data.national.overExploited / data.national.totalDistricts * 100), count: data.national.overExploited.toLocaleString(), color:"#e84040" },
@@ -79,13 +68,13 @@ export default function Dashboard() {
   return (
     <>
       <style>{css}</style>
-      <div style={{ display:"flex", minHeight:"100vh", background:"var(--bg)" }}>
+      <div style={{ display:"flex", minHeight:"100vh", background:"var(--bg)", transition:"background 0.35s" }}>
 
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main content */}
-        <main style={{ flex:1, padding:"32px 36px", overflowY:"auto" }}>
+        <main className="resp-pad-section" style={{ flex:1, padding:"32px 36px", overflowY:"auto" }}>
           {!data ? (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%" }}>
               <div style={{ color:"var(--accent)", fontFamily:"var(--font-mono)" }}>Loading FY 2024-25 Data...</div>
@@ -106,15 +95,15 @@ export default function Dashboard() {
               </h1>
               <p style={{ color:"var(--muted)", fontSize:14, marginTop:4, fontWeight:300 }}>India groundwater intelligence — ask anything.</p>
             </div>
-            <button onClick={()=>navigate("/chatbot")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 24px", background:"var(--accent)", border:"none", borderRadius:10, color:"#03100d", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", boxShadow:"0 0 24px rgba(0,232,162,0.3)", transition:"all 0.25s", animation:"fadeUp 0.5s ease 0.1s both" }}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 32px rgba(0,232,162,0.35)";}}
-              onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 0 24px rgba(0,232,162,0.3)";}}>
+            <button onClick={()=>navigate("/chatbot")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 24px", background:"var(--accent)", border:"none", borderRadius:10, color:"var(--btn-text)", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"var(--font-body)", boxShadow:"0 0 24px rgba(0,168,232,0.3)", transition:"all 0.25s", animation:"fadeUp 0.5s ease 0.1s both" }}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 32px rgba(0,168,232,0.35)";}}
+              onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 0 24px rgba(0,168,232,0.3)";}}>
               💬 Ask AI Now
             </button>
           </div>
 
           {/* Stat Cards */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:28 }}>
+          <div className="resp-grid-2" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:28 }}>
             {stats.map((s,i) => (
               <div key={s.label} className="stat-card" style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, padding:"20px", transition:"all 0.3s", cursor:"default", animation:`fadeUp 0.5s ease ${i*0.08}s both` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
@@ -128,7 +117,7 @@ export default function Dashboard() {
           </div>
 
           {/* Main grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:20, marginBottom:20 }}>
+          <div className="resp-flex-col" style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:20, marginBottom:20 }}>
 
             {/* Quick actions */}
             <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:16, padding:"24px", animation:"fadeUp 0.5s ease 0.2s both" }}>
@@ -138,7 +127,7 @@ export default function Dashboard() {
                   <div style={{ fontFamily:"var(--font-display)", fontSize:18, fontWeight:700 }}>What would you like to do?</div>
                 </div>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
+              <div className="dash-actions" style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
                 {quickActions.map((a,i) => (
                   <div key={a.label} className="quick-action" onClick={()=>navigate(a.path)} style={{ padding:"20px", background:"rgba(255,255,255,0.02)", border:"1px solid var(--border)", borderRadius:12, cursor:"pointer", transition:"all 0.3s", animation:`fadeUp 0.5s ease ${0.3+i*0.05}s both` }}>
                     <div style={{ fontSize:28, marginBottom:10 }}>{a.icon}</div>
@@ -164,7 +153,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              <div style={{ marginTop:20, padding:"10px 12px", background:"rgba(0,232,162,0.06)", border:"1px solid rgba(0,232,162,0.15)", borderRadius:8, fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>
+              <div style={{ marginTop:20, padding:"10px 12px", background:"rgba(0,168,232,0.06)", border:"1px solid rgba(0,168,232,0.15)", borderRadius:8, fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>
                 Source: CGWB FY 2024-25 Assessment
               </div>
             </div>
@@ -184,7 +173,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {recentChats.map((q,i) => (
-                  <div key={i} className="chat-chip" onClick={()=>navigate("/chatbot")} style={{ padding:"10px 14px", background:"rgba(0,232,162,0.04)", border:"1px solid rgba(0,232,162,0.1)", borderRadius:8, fontSize:13, color:"var(--muted)", cursor:"pointer", transition:"all 0.25s", fontFamily:"var(--font-mono)", animation:`fadeUp 0.4s ease ${0.35+i*0.06}s both` }}>
+                  <div key={i} className="chat-chip" onClick={()=>navigate("/chatbot")} style={{ padding:"10px 14px", background:"rgba(0,168,232,0.04)", border:"1px solid rgba(0,168,232,0.1)", borderRadius:8, fontSize:13, color:"var(--muted)", cursor:"pointer", transition:"all 0.25s", fontFamily:"var(--font-mono)", animation:`fadeUp 0.4s ease ${0.35+i*0.06}s both` }}>
                     💬 {q}
                   </div>
                 ))}
@@ -199,12 +188,12 @@ export default function Dashboard() {
               <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:100, position:"relative" }}>
                 {trendData.map((v,i) => (
                   <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, position:"relative" }}>
-                    <div style={{ width:"100%", height:`${v}px`, background: v>=70?"#00e8a2":v>=65?"#f0dc3a":"#f5a623", borderRadius:"3px 3px 0 0", opacity:0.8, animation:`bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i*0.07}s both`, transition:"all 0.2s", cursor:"pointer" }}
+                    <div style={{ width:"100%", height:`${v}px`, background: v>=70?"var(--accent)":v>=65?"#f0dc3a":"#f5a623", borderRadius:"3px 3px 0 0", opacity:0.8, animation:`bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i*0.07}s both`, transition:"all 0.2s", cursor:"pointer" }}
                       onMouseEnter={() => setHoveredBar(i)}
                       onMouseLeave={() => setHoveredBar(null)}
                     />
                     {hoveredBar === i && (
-                      <div style={{ position:"absolute", bottom:`${v + 8}px`, background:"#061a14", border:"1px solid #163d2e", padding:"6px 10px", borderRadius:6, color:"#ddf0e8", fontSize:11, fontWeight:600, zIndex:10, whiteSpace:"nowrap", boxShadow:"0 4px 12px rgba(0,0,0,0.4)" }}>
+                      <div style={{ position:"absolute", bottom:`${v + 8}px`, background:"var(--bg2)", border:"1px solid var(--border)", padding:"6px 10px", borderRadius:6, color:"var(--text)", fontSize:11, fontWeight:600, zIndex:10, whiteSpace:"nowrap", boxShadow:"0 4px 12px rgba(0,0,0,0.4)" }}>
                         {months[i]}: {v}%
                       </div>
                     )}
@@ -213,7 +202,7 @@ export default function Dashboard() {
                 ))}
               </div>
               <div style={{ display:"flex", gap:16, marginTop:16 }}>
-                {[["≥70% Safe","#00e8a2"],["65–70%","#f0dc3a"],["<65%","#f5a623"]].map(([l,c]) => (
+                {[["≥70% Safe","var(--accent)"],["65–70%","#f0dc3a"],["<65%","#f5a623"]].map(([l,c]) => (
                   <span key={l} style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)" }}>
                     <span style={{ width:8, height:8, borderRadius:2, background:c, display:"inline-block" }} />{l}
                   </span>

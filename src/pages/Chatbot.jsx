@@ -13,31 +13,9 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-:root{--bg:#03100d;--bg2:#061a14;--surface:#0a2318;--border:#163d2e;--accent:#00e8a2;--accent2:#00b87a;--accent-dim:rgba(0,232,162,0.12);--accent-glow:rgba(0,232,162,0.25);--text:#ddf0e8;--muted:#5a8a77;--font-display:'Playfair Display',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);height:100%;}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
-@keyframes bar-grow{from{width:0;}}
-@keyframes typing{0%,100%{opacity:0.3;}50%{opacity:1;}}
-.chat-input:focus{border-color:rgba(0,232,162,0.4)!important;outline:none;box-shadow:0 0 0 3px rgba(0,232,162,0.07);}
-.send-btn:hover{transform:scale(1.08);box-shadow:0 0 20px var(--accent-glow)!important;}
-.nav-item:hover{background:var(--accent-dim)!important;color:var(--accent)!important;}
-.suggest-chip:hover{border-color:rgba(0,232,162,0.4)!important;color:var(--accent)!important;background:rgba(0,232,162,0.08)!important;}
-.msg-bubble:hover{transform:scale(1.005);}
-.msg-bubble:hover{transform:scale(1.005);}
-.ai-markdown p { margin-bottom: 12px; line-height: 1.6; }
-.ai-markdown ul, .ai-markdown ol { padding-left: 20px; margin-bottom: 12px; }
-.ai-markdown li { margin-bottom: 6px; }
-.ai-markdown strong { color: var(--accent); }
-.ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { margin-top: 16px; margin-bottom: 10px; color: var(--accent); font-family: var(--font-display); }
-.ai-markdown table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; font-family: var(--font-body); overflow: hidden; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.ai-markdown th, .ai-markdown td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
-.ai-markdown th { background: rgba(0,232,162,0.08); color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; font-family: var(--font-mono); }
-.ai-markdown tr:last-child td { border-bottom: none; }
-.ai-markdown tr:hover td { background: rgba(0,232,162,0.04); transition: background 0.2s; }
+}
+}
 `;
 
 const SUGGESTIONS = [
@@ -265,7 +243,7 @@ export default function Chatbot() {
         <aside style={{ width:260, background:"var(--bg2)", borderRight:"1px solid var(--border)", display:"flex", flexDirection:"column" }}>
           <div style={{ padding:"20px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:10 }}>
             <button onClick={()=>navigate("/dashboard")} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:18, lineHeight:1 }}>←</button>
-            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:13, boxShadow:"0 0 14px rgba(0,232,162,0.2)", cursor:"pointer" }} onClick={() => navigate('/')}>
+            <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #0078d4, #00a8e8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:13, boxShadow:"0 0 14px rgba(0,168,232,0.2)", cursor:"pointer" }} onClick={() => navigate('/')}>
                 <img src="/ingres.svg" alt="" />
             </div>
             <div>
@@ -277,7 +255,7 @@ export default function Chatbot() {
           </div>
 
           <div style={{ padding:"16px", borderBottom:"1px solid var(--border)" }}>
-            <button onClick={startNewChat} style={{ width:"100%", padding:"10px", background:"var(--accent-dim)", border:"1px solid rgba(0,232,162,0.2)", borderRadius:8, color:"var(--accent)", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"var(--font-body)", transition:"box-shadow 0.2s" }} onMouseOver={e=>e.currentTarget.style.boxShadow="0 0 12px var(--accent-glow)"} onMouseOut={e=>e.currentTarget.style.boxShadow="none"}>
+            <button onClick={startNewChat} style={{ width:"100%", padding:"10px", background:"var(--accent-dim)", border:"1px solid rgba(0,168,232,0.2)", borderRadius:8, color:"var(--accent)", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"var(--font-body)", transition:"box-shadow 0.2s" }} onMouseOver={e=>e.currentTarget.style.boxShadow="0 0 12px var(--accent-glow)"} onMouseOut={e=>e.currentTarget.style.boxShadow="none"}>
               + New Chat
             </button>
           </div>
@@ -288,7 +266,7 @@ export default function Chatbot() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>Chat History</div>
                 {sessions.map(s => (
-                  <div key={s.id} onClick={() => loadSession(s.id)} style={{ padding:"10px 12px", marginBottom:6, background: activeSessionId === s.id ? "rgba(0,232,162,0.1)" : "transparent", border: activeSessionId === s.id ? "1px solid rgba(0,232,162,0.3)" : "1px solid transparent", borderRadius:7, fontSize:13, color: activeSessionId === s.id ? "var(--text)" : "var(--muted)", cursor:"pointer", transition:"all 0.2s", display:"flex", justifyContent:"space-between", alignItems:"center" }} className="nav-item">
+                  <div key={s.id} onClick={() => loadSession(s.id)} style={{ padding:"10px 12px", marginBottom:6, background: activeSessionId === s.id ? "rgba(0,168,232,0.1)" : "transparent", border: activeSessionId === s.id ? "1px solid rgba(0,168,232,0.3)" : "1px solid transparent", borderRadius:7, fontSize:13, color: activeSessionId === s.id ? "var(--text)" : "var(--muted)", cursor:"pointer", transition:"all 0.2s", display:"flex", justifyContent:"space-between", alignItems:"center" }} className="nav-item">
                     <span style={{ whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.title}</span>
                     <button onClick={(e) => deleteSession(e, s.id)} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:11, padding:4 }}>×</button>
                   </div>
@@ -298,7 +276,7 @@ export default function Chatbot() {
 
             <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>Try asking</div>
             {SUGGESTIONS.map((s,i) => (
-              <div key={i} className="suggest-chip" onClick={()=>send(s)} style={{ padding:"9px 12px", marginBottom:6, background:"rgba(0,232,162,0.03)", border:"1px solid rgba(0,232,162,0.1)", borderRadius:7, fontSize:12, color:"var(--muted)", cursor:"pointer", transition:"all 0.2s", fontFamily:"var(--font-mono)", lineHeight:1.4 }}>
+              <div key={i} className="suggest-chip" onClick={()=>send(s)} style={{ padding:"9px 12px", marginBottom:6, background:"rgba(0,168,232,0.03)", border:"1px solid rgba(0,168,232,0.1)", borderRadius:7, fontSize:12, color:"var(--muted)", cursor:"pointer", transition:"all 0.2s", fontFamily:"var(--font-mono)", lineHeight:1.4 }}>
                 {s}
               </div>
             ))}
@@ -331,7 +309,7 @@ export default function Chatbot() {
             </div>
             <div style={{ display:"flex", gap:8 }}>
               {["Safe","Semi-Critical","Critical","Over-Exploited"].map((s,i)=>{
-                const c=["#00e8a2","#f0dc3a","#f5a623","#e84040"][i];
+                const c=["var(--accent)","#f0dc3a","#f5a623","#e84040"][i];
                 return <span key={s} style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:c, fontFamily:"var(--font-mono)", letterSpacing:"0.04em" }}><span style={{ width:6, height:6, borderRadius:"50%", background:c, display:"inline-block" }} />{s}</span>;
               })}
             </div>
@@ -342,12 +320,12 @@ export default function Chatbot() {
             {messages.map((m,i) => (
               <div key={i} className="msg-bubble" style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", animation:`fadeUp 0.3s ease both`, transition:"transform 0.2s" }}>
                 {m.role==="ai" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,232,162,0.2)" }}>
+                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #0078d4, #00a8e8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,168,232,0.2)" }}>
                     <img src="/ingres.svg" alt="" />
                   </div>
                 )}
                 <div style={{ maxWidth:"72%" }}>
-                  <div style={{ padding:"12px 16px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?"var(--accent)":"var(--surface)", border:m.role==="ai"?"1px solid var(--border)":"none", color:m.role==="user"?"#03100d":"var(--text)", fontSize:14, lineHeight:1.6, fontWeight:m.role==="user"?500:400 }}>
+                  <div style={{ padding:"12px 16px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?"var(--accent)":"var(--surface)", border:m.role==="ai"?"1px solid var(--border)":"none", color:m.role==="user"?"var(--bg)":"var(--text)", fontSize:14, lineHeight:1.6, fontWeight:m.role==="user"?500:400 }}>
                     {m.role === "user" ? m.text : (
                       <div className="ai-markdown">
                         <ReactMarkdown 
@@ -365,17 +343,17 @@ export default function Chatbot() {
                                       label: chartConfig.title || 'Data',
                                       data: chartConfig.data,
                                       backgroundColor: [
-                                        'rgba(0, 232, 162, 0.85)', 
+                                        'rgba(0, 168, 232, 0.85)', 
                                         'rgba(240, 220, 58, 0.85)', 
                                         'rgba(245, 166, 35, 0.85)', 
                                         'rgba(232, 64, 64, 0.85)', 
-                                        'rgba(0, 184, 122, 0.85)', 
-                                        'rgba(90, 138, 119, 0.85)'
+                                        'rgba(0, 120, 212, 0.85)', 
+                                        'rgba(90, 119, 138, 0.85)'
                                       ],
                                       hoverBackgroundColor: [
-                                        '#00e8a2', '#f0dc3a', '#f5a623', '#e84040', '#00b87a', '#78a892'
+                                        'var(--accent)', '#f0dc3a', '#f5a623', '#e84040', 'var(--accent2)', '#7888a8'
                                       ],
-                                      borderColor: '#0a2318',
+                                      borderColor: 'var(--surface)',
                                       borderWidth: 2,
                                       hoverOffset: chartConfig.type === 'pie' ? 12 : 0,
                                       borderRadius: chartConfig.type === 'bar' ? 6 : 0,
@@ -389,14 +367,14 @@ export default function Chatbot() {
                                     plugins: { 
                                       legend: { 
                                         position: 'bottom',
-                                        labels: { color: '#ddf0e8', padding: 16, font: { family: "'DM Sans', sans-serif", size: 12 }, usePointStyle: true, pointStyle: 'circle' } 
+                                        labels: { color: 'var(--text)', padding: 16, font: { family: "'DM Sans', sans-serif", size: 12 }, usePointStyle: true, pointStyle: 'circle' } 
                                       }, 
-                                      title: { display: !!chartConfig.title, text: chartConfig.title, color: '#00e8a2', font: { family: "'Playfair Display', serif", size: 16, weight: 'bold' }, padding: { bottom: 20 } },
+                                      title: { display: !!chartConfig.title, text: chartConfig.title, color: 'var(--accent)', font: { family: "'Playfair Display', serif", size: 16, weight: 'bold' }, padding: { bottom: 20 } },
                                       tooltip: {
-                                        backgroundColor: 'rgba(6, 26, 20, 0.95)',
-                                        titleColor: '#00e8a2',
-                                        bodyColor: '#ddf0e8',
-                                        borderColor: '#163d2e',
+                                        backgroundColor: 'var(--surface-glass)',
+                                        titleColor: 'var(--accent)',
+                                        bodyColor: 'var(--text)',
+                                        borderColor: 'var(--border)',
                                         borderWidth: 1,
                                         padding: 12,
                                         cornerRadius: 8,
@@ -412,8 +390,8 @@ export default function Chatbot() {
                                       }
                                     },
                                     scales: chartConfig.type === 'bar' ? {
-                                      y: { ticks: { color: '#5a8a77', font:{family:"'DM Mono', monospace"} }, grid: { color: 'rgba(0, 232, 162, 0.05)', tickLength: 0 }, border: { dash: [4,4], display: false } },
-                                      x: { ticks: { color: '#ddf0e8', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
+                                      y: { ticks: { color: 'var(--muted)', font:{family:"'DM Mono', monospace"} }, grid: { color: 'rgba(0, 168, 232, 0.05)', tickLength: 0 }, border: { dash: [4,4], display: false } },
+                                      x: { ticks: { color: 'var(--text)', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
                                     } : {}
                                   };
 
@@ -428,9 +406,9 @@ export default function Chatbot() {
                                     const CustomTooltip = ({ active, payload, label }) => {
                                       if (active && payload && payload.length) {
                                         return (
-                                          <div style={{ background: 'rgba(6, 26, 20, 0.95)', border: '1px solid #163d2e', padding: 12, borderRadius: 8 }}>
-                                            <p style={{ color: '#00e8a2', margin: 0, paddingBottom: 6, borderBottom: '1px solid #163d2e', fontFamily: "var(--font-display)" }}>{label}</p>
-                                            <p style={{ color: '#ddf0e8', margin: 0, paddingTop: 6, fontFamily: "var(--font-mono)", fontSize: 13 }}>Value: {payload[0].value}</p>
+                                          <div style={{ background: 'var(--surface-glass)', border: '1px solid var(--border)', padding: 12, borderRadius: 8 }}>
+                                            <p style={{ color: 'var(--accent)', margin: 0, paddingBottom: 6, borderBottom: '1px solid var(--border)', fontFamily: "var(--font-display)" }}>{label}</p>
+                                            <p style={{ color: 'var(--text)', margin: 0, paddingTop: 6, fontFamily: "var(--font-mono)", fontSize: 13 }}>Value: {payload[0].value}</p>
                                           </div>
                                         );
                                       }
@@ -441,31 +419,31 @@ export default function Chatbot() {
                                       <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
                                            onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
                                            onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
-                                        {chartConfig.title && <h3 style={{ textAlign: 'center', color: '#00e8a2', fontFamily: "var(--font-display)", marginBottom: 16, marginTop: 0 }}>{chartConfig.title}</h3>}
+                                        {chartConfig.title && <h3 style={{ textAlign: 'center', color: 'var(--accent)', fontFamily: "var(--font-display)", marginBottom: 16, marginTop: 0 }}>{chartConfig.title}</h3>}
                                         <ResponsiveContainer width="100%" height="85%">
                                           {chartConfig.type === 'line' ? (
                                             <LineChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 232, 162, 0.05)" vertical={false} />
-                                              <XAxis dataKey="name" stroke="#ddf0e8" tick={{ fill: '#ddf0e8', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
-                                              <YAxis stroke="#5a8a77" tick={{ fill: '#5a8a77', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
+                                              <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                              <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
                                               <RechartsTooltip content={<CustomTooltip />} />
-                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: '#ddf0e8' }} />
-                                              <Line type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="#00e8a2" strokeWidth={3} dot={{ r: 4, fill: '#03100d', stroke: '#00e8a2', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#00e8a2', stroke: '#03100d' }} />
+                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
+                                              <Line type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--accent)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--bg)' }} />
                                             </LineChart>
                                           ) : (
                                             <AreaChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                               <defs>
                                                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                  <stop offset="5%" stopColor="#00e8a2" stopOpacity={0.8}/>
-                                                  <stop offset="95%" stopColor="#00e8a2" stopOpacity={0}/>
+                                                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8}/>
+                                                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
                                                 </linearGradient>
                                               </defs>
-                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 232, 162, 0.05)" vertical={false} />
-                                              <XAxis dataKey="name" stroke="#ddf0e8" tick={{ fill: '#ddf0e8', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
-                                              <YAxis stroke="#5a8a77" tick={{ fill: '#5a8a77', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
+                                              <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                              <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
                                               <RechartsTooltip content={<CustomTooltip />} />
-                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: '#ddf0e8' }} />
-                                              <Area type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="#00e8a2" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
+                                              <Area type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                                             </AreaChart>
                                           )}
                                         </ResponsiveContainer>
@@ -506,7 +484,7 @@ export default function Chatbot() {
                   <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", marginTop:4, textAlign:m.role==="user"?"right":"left" }}>{fmt(m.ts)}</div>
                 </div>
                 {m.role==="user" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"rgba(0,232,162,0.15)", border:"1px solid rgba(0,232,162,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)", fontSize:14, marginLeft:10, flexShrink:0 }}>
+                  <div style={{ width:32, height:32, borderRadius:9, background:"rgba(0,168,232,0.15)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)", fontSize:14, marginLeft:10, flexShrink:0 }}>
                     {(user?.displayName||user?.email||"U")[0].toUpperCase()}
                   </div>
                 )}
@@ -514,7 +492,7 @@ export default function Chatbot() {
             ))}
             {typing && (
               <div style={{ display:"flex", alignItems:"center", gap:10, animation:"fadeUp 0.3s ease both" }}>
-                <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:12 }}>IN</div>
+                <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #0078d4, #00a8e8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:12 }}>IN</div>
                 <div style={{ padding:"12px 16px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"16px 16px 16px 4px", display:"flex", gap:5, alignItems:"center" }}>
                   {[0,0.2,0.4].map((d,i)=><span key={i} style={{ width:7, height:7, borderRadius:"50%", background:"var(--accent)", display:"inline-block", animation:`pulse-dot 1.2s ${d}s infinite` }} />)}
                 </div>
@@ -537,8 +515,8 @@ export default function Chatbot() {
                 rows={1}
                 style={{ flex:1, background:"transparent", border:"none", color:"var(--text)", fontSize:14, fontFamily:"var(--font-body)", resize:"none", outline:"none", lineHeight:1.5, padding:"6px 0", maxHeight:120, overflowY:"auto" }}
               />
-              <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||typing} style={{ width:40, height:40, borderRadius:10, background: input.trim()&&!typing?"var(--accent)":"rgba(255,255,255,0.06)", border:"none", cursor:input.trim()&&!typing?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: input.trim()?"0 0 16px rgba(0,232,162,0.2)":"none", flexShrink:0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke={input.trim()&&!typing?"#03100d":"#5a8a77"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||typing} style={{ width:40, height:40, borderRadius:10, background: input.trim()&&!typing?"var(--accent)":"rgba(255,255,255,0.06)", border:"none", cursor:input.trim()&&!typing?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: input.trim()?"0 0 16px rgba(0,168,232,0.2)":"none", flexShrink:0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke={input.trim()&&!typing?"var(--bg)":"var(--muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
             <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", textAlign:"center", marginTop:8 }}>
