@@ -70,8 +70,10 @@ export default function Login() {
           </div>
           <div style={{ position:"relative", zIndex:1, animation:"fadeUp 0.8s ease both" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:48 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, var(--accent2), var(--accent))", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px var(--accent-glow)" }}>IN</div>
-              <span style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:20, letterSpacing:"0.03em" }}>INGRES <em style={{ color:"var(--accent)" }}>AI</em></span>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, var(--accent2), var(--accent))", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px var(--accent-glow)" }}>
+                <img src="/ingres.svg" alt="" />
+              </div>
+              <span style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:20, letterSpacing:"0.03em" }}>AquaGuide<em style={{ color:"var(--accent)" }}>AI</em></span>
             </div>
             <h1 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(36px,4vw,52px)", fontWeight:900, lineHeight:1.1, marginBottom:20 }}>
               India's Groundwater<br /><em style={{ color:"var(--accent)" }}>Intelligence</em> Layer
@@ -80,7 +82,7 @@ export default function Login() {
               Query 7,000+ groundwater assessment blocks across India using plain English. Powered by CGWB data and AI.
             </p>
             <div style={{ display:"flex", gap:24 }}>
-              {[["7000+","Assessment Blocks"],["36","States & UTs"],["CGWB","Verified Data"]].map(([v,l]) => (
+              {[["713+","Districts"],["36","States & UTs"],["CGWB","Verified Data"]].map(([v,l]) => (
                 <div key={l}>
                   <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:22, color:"var(--accent)" }}>{v}</div>
                   <div style={{ fontSize:11, color:"var(--muted)", marginTop:2, fontFamily:"var(--font-mono)", letterSpacing:"0.04em" }}>{l}</div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 /* ══════════════════════════════════════════════════════════
-   INGRES AI — Landing Page
+   AquaGuide AI — Landing Page
    Scroll animations: IntersectionObserver on every section
    Micro-interactions: hover, focus, ripple on buttons
    Parallax: hero glow drifts on scroll
@@ -519,7 +519,7 @@ export default function Landing() {
           </h1>
 
           <p style={{ fontSize: 18, color: "var(--muted)", lineHeight: 1.7, maxWidth: 520, marginBottom: 24, animation: "fadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.34s both", fontWeight: 300 }}>
-            Ask INGRES AI anything about India's groundwater — block-level extraction rates, critical zones, aquifer trends — in plain English.
+            Ask AquaGuide AI anything about India's groundwater — block-level extraction rates, critical zones, aquifer trends — in plain English.
           </p>
 
           {/* Typewriter */}
@@ -555,7 +555,7 @@ export default function Landing() {
 
           {/* Stats */}
           <div style={{ display: "flex", gap: 32, marginTop: 56, animation: "fadeUp 0.7s cubic-bezier(.22,1,.36,1) 0.64s both" }}>
-            {[["7000", "+", "Assessment Blocks"], ["36", "", "States & UTs"], ["", "Real-time", "AI Queries"], ["", "CGWB", "Verified Data"]].map(([num, suffix, label], i) => (
+            {[["713", "+", "Districts"], ["36", "", "States & UTs"], ["", "Real-time", "AI Queries"], ["", "CGWB", "Verified Data"]].map(([num, suffix, label], i) => (
               <div key={label} style={{ cursor: "default" }}>
                 <div className="stat-val" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 24, color: "var(--accent)" }}>
                   {num ? <CountUp to={parseInt(num)} suffix={suffix} /> : suffix}
@@ -597,7 +597,7 @@ export default function Landing() {
                 Ask in plain English.<br /><em style={{ color: "var(--accent)" }}>Get expert answers.</em>
               </h2>
               <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginBottom: 32, fontWeight: 300 }}>
-                INGRES AI converts natural language questions into precise groundwater database queries — returning structured data, visualizations, and CGWB-backed insights instantly.
+                AquaGuide AI converts natural language questions into precise groundwater database queries — returning structured data, visualizations, and CGWB-backed insights instantly.
               </p>
               <div className="stagger">
                 {[
@@ -632,7 +632,7 @@ export default function Landing() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#03100d"/></svg>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>INGRES AI Assistant</div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>AquaGuide AI Assistant</div>
                   <div style={{ fontSize: 11, color: "var(--accent)", display: "flex", alignItems: "center", gap: 5 }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)", animation: "pulse-dot 1.5s infinite", display: "inline-block" }} />
                     Online · CGWB Data Connected
@@ -867,7 +867,7 @@ export default function Landing() {
             India's water future starts with<br /><em style={{ color: "var(--accent)" }}>better questions.</em>
           </h2>
           <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginBottom: 40, fontWeight: 300 }}>
-            Ask INGRES AI anything about groundwater across India's 7,000+ blocks. Built for researchers, policymakers, and citizens.
+            Ask AquaGuide AI anything about groundwater across India's 7,000+ blocks. Built for researchers, policymakers, and citizens.
           </p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
             <button className="btn-ripple" style={{ padding: "15px 38px", borderRadius: 12, border: "none", background: "var(--accent)", color: "#03100d", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 0 40px var(--accent-glow)", transition: "all 0.3s cubic-bezier(.22,1,.36,1)" }}
@@ -899,7 +899,7 @@ export default function Landing() {
             onMouseEnter={e => e.currentTarget.style.transform = "rotate(10deg) scale(1.1)"}
             onMouseLeave={e => e.currentTarget.style.transform = ""}
           >IN</div>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>INGRES AI</span>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>AquaGuide AI</span>
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>
           © 2024 Central Ground Water Board · Ministry of Jal Shakti · Smart India Hackathon #25066

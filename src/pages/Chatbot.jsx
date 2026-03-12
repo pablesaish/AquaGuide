@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer } from 'recharts';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -99,7 +100,7 @@ If the user asks about multiple categories of things (like Safe vs Critical numb
   "data": [10, 20]
 }
 \`\`\`
-Use "pie" or "bar" for the chart type. 
+Use "pie", "bar", "line", or "area" for the chart type. Use "line" or "area" for trends over time or continuous data.
 
 DATA CONTEXT:
 ${JSON.stringify(contextData)}
@@ -415,6 +416,62 @@ export default function Chatbot() {
                                       x: { ticks: { color: '#ddf0e8', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
                                     } : {}
                                   };
+
+                                  const isRecharts = chartConfig.type === 'line' || chartConfig.type === 'area';
+                                  
+                                  if (isRecharts) {
+                                    const rechartsData = chartConfig.labels.map((label, i) => ({
+                                      name: label,
+                                      value: chartConfig.data[i]
+                                    }));
+                                    
+                                    const CustomTooltip = ({ active, payload, label }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div style={{ background: 'rgba(6, 26, 20, 0.95)', border: '1px solid #163d2e', padding: 12, borderRadius: 8 }}>
+                                            <p style={{ color: '#00e8a2', margin: 0, paddingBottom: 6, borderBottom: '1px solid #163d2e', fontFamily: "var(--font-display)" }}>{label}</p>
+                                            <p style={{ color: '#ddf0e8', margin: 0, paddingTop: 6, fontFamily: "var(--font-mono)", fontSize: 13 }}>Value: {payload[0].value}</p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    };
+
+                                    return (
+                                      <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
+                                           onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+                                           onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+                                        {chartConfig.title && <h3 style={{ textAlign: 'center', color: '#00e8a2', fontFamily: "var(--font-display)", marginBottom: 16, marginTop: 0 }}>{chartConfig.title}</h3>}
+                                        <ResponsiveContainer width="100%" height="85%">
+                                          {chartConfig.type === 'line' ? (
+                                            <LineChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 232, 162, 0.05)" vertical={false} />
+                                              <XAxis dataKey="name" stroke="#ddf0e8" tick={{ fill: '#ddf0e8', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                              <YAxis stroke="#5a8a77" tick={{ fill: '#5a8a77', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                              <RechartsTooltip content={<CustomTooltip />} />
+                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: '#ddf0e8' }} />
+                                              <Line type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="#00e8a2" strokeWidth={3} dot={{ r: 4, fill: '#03100d', stroke: '#00e8a2', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#00e8a2', stroke: '#03100d' }} />
+                                            </LineChart>
+                                          ) : (
+                                            <AreaChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                              <defs>
+                                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                  <stop offset="5%" stopColor="#00e8a2" stopOpacity={0.8}/>
+                                                  <stop offset="95%" stopColor="#00e8a2" stopOpacity={0}/>
+                                                </linearGradient>
+                                              </defs>
+                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 232, 162, 0.05)" vertical={false} />
+                                              <XAxis dataKey="name" stroke="#ddf0e8" tick={{ fill: '#ddf0e8', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                              <YAxis stroke="#5a8a77" tick={{ fill: '#5a8a77', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                              <RechartsTooltip content={<CustomTooltip />} />
+                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: '#ddf0e8' }} />
+                                              <Area type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="#00e8a2" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                            </AreaChart>
+                                          )}
+                                        </ResponsiveContainer>
+                                      </div>
+                                    );
+                                  }
 
                                   return (
                                     <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: chartConfig.type === 'pie' ? "380px" : "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 

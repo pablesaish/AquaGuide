@@ -82,8 +82,10 @@ export default function Register() {
           </div>
           <div style={{ position:"relative", zIndex:1, animation:"fadeUp 0.7s ease both" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:48 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Playfair Display',serif", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px rgba(0,232,162,0.25)" }}>IN</div>
-              <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:20 }}>INGRES <em style={{ color:"#00e8a2" }}>AI</em></span>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg, #00b87a, #00e8a2)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Playfair Display',serif", fontWeight:900, color:"#03100d", fontSize:17, boxShadow:"0 0 24px rgba(0,232,162,0.25)" }}>
+                <img src="/ingres.svg" alt="" />
+              </div>
+              <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:20 }}>AquaGuide <em style={{ color:"#00e8a2" }}>AI</em></span>
             </div>
             <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(32px,3.5vw,46px)", fontWeight:900, lineHeight:1.15, marginBottom:20 }}>
               Join the groundwater<br /><em style={{ color:"#00e8a2" }}>intelligence</em> network
