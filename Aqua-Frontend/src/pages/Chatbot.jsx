@@ -368,7 +368,7 @@ export default function Chatbot() {
       }
     }); 
 
-    fetch('/summaryData.json')
+    fetch('/api/data')
       .then(res => res.json())
       .then(d => {
         setData(parseSummaryData(d));

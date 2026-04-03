@@ -10,13 +10,13 @@ try {
     data[sheetName] = xlsx.utils.sheet_to_json(sheet);
   }
 
-  const outputDir = './src/data';
+  const outputDir = './data';
   if (!fs.existsSync(outputDir)){
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  fs.writeFileSync('./src/data/reportData.json', JSON.stringify(data, null, 2));
-  console.log('Successfully written data to ./src/data/reportData.json');
+  fs.writeFileSync('./data/reportData.json', JSON.stringify(data, null, 2));
+  console.log('Successfully written data to ./data/reportData.json');
 } catch (e) {
   console.error("Error details:", e);
 }

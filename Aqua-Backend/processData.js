@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 try {
-  const rawData = JSON.parse(fs.readFileSync('./src/data/reportData.json', 'utf8'));
+  const rawData = JSON.parse(fs.readFileSync('./data/reportData.json', 'utf8'));
   const gec = rawData.GEC || Object.values(rawData)[0];
 
   const results = [];
@@ -115,8 +115,8 @@ try {
     stateStats
   };
 
-  fs.writeFileSync('./public/summaryData.json', JSON.stringify(finalData, null, 2));
-  console.log('Successfully written data to ./public/summaryData.json');
+  fs.writeFileSync('./data/summaryData.json', JSON.stringify(finalData, null, 2));
+  console.log('Successfully written data to ./data/summaryData.json');
 } catch (e) {
   console.error(e);
 }
