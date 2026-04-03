@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -9,6 +9,8 @@ import rehypeRaw from 'rehype-raw';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer } from 'recharts';
+import { parseReportData } from '../utils/dataParser';
+import rawReport from '../data/reportData.json';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -24,14 +26,39 @@ const css = `
 .streaming-cursor::after{content:'▊';color:var(--accent);animation:blink 0.8s step-end infinite;margin-left:2px;font-size:0.9em;}
 `;
 
-const SUGGESTIONS = [
+const SUGGESTION_POOL = [
   "Groundwater status in Maharashtra",
   "Over-exploited blocks in Rajasthan",
   "Which districts in Gujarat are critical?",
   "Compare Punjab and UP extraction rates",
   "Summarize Tamil Nadu groundwater data",
   "Show safe zones in Karnataka",
+  "Water quality issues in Bihar",
+  "Recharge potential of Madhya Pradesh",
+  "Which states have the highest extraction?",
+  "Net groundwater availability in Haryana",
+  "How is Delhi's groundwater situation?",
+  "Critical districts in Uttar Pradesh",
+  "Groundwater recharge vs extraction in Telangana",
+  "Top 5 over-exploited states in India",
+  "Show me Andhra Pradesh district-wise data",
+  "Is Jharkhand's groundwater safe?",
+  "Environmental flow data for Kerala",
+  "Domestic water allocation in Odisha",
+  "Compare Gujarat and Rajasthan extraction",
+  "Which UTs have safe groundwater?",
+  "Irrigation extraction in West Bengal",
+  "Stage of extraction in Chhattisgarh",
+  "Industrial groundwater use in Maharashtra",
+  "Future water availability in Punjab",
 ];
+
+const SUGGESTION_ICONS = ["💧","📊","⚠️","🔍","🌊","📈","🗺️","💡","🏞️","📉"];
+
+function pickRandom(arr, n) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
 
 async function getOpenAIResponse(query, data, apiKey, chatHistory = []) {
   if (!apiKey) return { text: "Please enter your OpenAI API Key down below to enable AI responses.", data: null };
@@ -115,62 +142,78 @@ async function getOpenAIResponse(query, data, apiKey, chatHistory = []) {
   
   // ────── CONTEXT BUILDING ──────
   let contextData = {};
-  const states = Object.keys(data.stateStats);
   
-  // Match states from resolved tokens
+  // Create lists from our parsed data
+  const stateNames = data.states.map(s => s.state);
+  
+  // Match states
   const matchedStates = [];
-  states.forEach(s => {
-    // Direct full-name match
+  stateNames.forEach(s => {
     if (q.includes(s.toLowerCase())) {
       if (!matchedStates.includes(s)) matchedStates.push(s);
       return;
     }
-    // Match via resolved aliases
     if (resolvedTokens.includes(s)) {
       if (!matchedStates.includes(s)) matchedStates.push(s);
     }
   });
   
-  // Also find districts — match against resolved query AND original query
+  // Match districts
   const matchedDistricts = [];
-  states.forEach(s => {
-    Object.keys(data.stateStats[s].districts).forEach(dist => {
-      const dl = dist.toLowerCase();
-      if (q.includes(dl) || resolvedTokens.some(t => t.toLowerCase() === dl)) {
-        matchedDistricts.push(dist);
-        if (!matchedStates.includes(s)) matchedStates.push(s);
-      }
-    });
+  data.districts.forEach(d => {
+    const dl = d.district.toLowerCase();
+    if (q.includes(dl) || resolvedTokens.some(t => t.toLowerCase() === dl)) {
+      if (!matchedDistricts.includes(d.district)) matchedDistricts.push(d.district);
+      if (!matchedStates.includes(d.state)) matchedStates.push(d.state);
+    }
   });
 
-  if (matchedStates.length > 0) {
-    matchedStates.forEach(s => contextData[s] = data.stateStats[s]);
+  if (matchedDistricts.length > 0) {
+    // Exact district rows + State summary fallback
+    contextData.districtDetails = data.districts.filter(d => matchedDistricts.includes(d.district));
+    contextData.stateSummaries = data.states.filter(s => matchedStates.includes(s.state));
+  } else if (matchedStates.length > 0) {
+    // State level rows only
+    contextData.stateDetails = data.states.filter(s => matchedStates.includes(s.state));
   } else {
     // ────── CONVERSATION HISTORY CONTEXT ──────
-    // If no state found in current query, check recent messages for context
     const recentMsgs = chatHistory.slice(-4).map(m => m.text.toLowerCase()).join(" ");
     const historyResolvedTokens = resolveAliases(recentMsgs);
     
     const historyMatchedStates = [];
-    states.forEach(s => {
+    stateNames.forEach(s => {
       if (recentMsgs.includes(s.toLowerCase()) || historyResolvedTokens.includes(s)) {
         if (!historyMatchedStates.includes(s)) historyMatchedStates.push(s);
       }
     });
+
+    const historyMatchedDistricts = [];
+    data.districts.forEach(d => {
+      const dl = d.district.toLowerCase();
+      if (recentMsgs.includes(dl) || historyResolvedTokens.some(t => t.toLowerCase() === dl)) {
+        if (!historyMatchedDistricts.includes(d.district)) historyMatchedDistricts.push(d.district);
+        if (!historyMatchedStates.includes(d.state)) historyMatchedStates.push(d.state);
+      }
+    });
     
-    if (historyMatchedStates.length > 0) {
-      // Use states from conversation history
-      historyMatchedStates.forEach(s => contextData[s] = data.stateStats[s]);
+    if (historyMatchedDistricts.length > 0) {
+      contextData.districtDetails = data.districts.filter(d => historyMatchedDistricts.includes(d.district));
+      contextData.stateSummaries = data.states.filter(s => historyMatchedStates.includes(s.state));
+    } else if (historyMatchedStates.length > 0) {
+      contextData.stateDetails = data.states.filter(s => historyMatchedStates.includes(s.state));
     } else {
-      // Truly no match — pass national summary
-      contextData = {
-        nationalSummary: data.national,
-        stateOverview: Object.fromEntries(
-          Object.entries(data.stateStats).map(([s, stat]) => [s, { safe: stat.safe, semiCritical: stat.semi, critical: stat.critical, overExploited: stat.over, total: stat.total }])
-        )
+      // Truly no match — pass national summary counts
+      contextData.nationalOverview = {
+        totalDistricts: data.districts.length,
+        safe: data.districts.filter(d => d.category === "Safe").length,
+        semiCritical: data.districts.filter(d => d.category === "Semi-Critical").length,
+        critical: data.districts.filter(d => d.category === "Critical").length,
+        overExploited: data.districts.filter(d => d.category === "Over-Exploited").length,
       };
     }
   }
+  
+  // (Context construction handled above)
 
   const prompt = `
 You are AquaGuide AI, a friendly and intelligent groundwater assistant for India.
@@ -277,14 +320,16 @@ User Query: "${query}"
 export default function Chatbot() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [data, setData] = useState(null);
+  const parsedData = useMemo(() => parseReportData(rawReport), []);
 
+  const [suggestions, setSuggestions] = useState(() => pickRandom(SUGGESTION_POOL, 4));
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [loadingText, setLoadingText] = useState("Consulting CGWB...");
   const [streamingIdx, setStreamingIdx] = useState(-1); // index of currently streaming message
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem("OPENAI_KEY") || "");
   const bottomRef = useRef(null);
@@ -311,7 +356,7 @@ export default function Chatbot() {
         }
       }
     }); 
-    fetch('/summaryData.json').then(r => r.json()).then(d => setData(d)).catch(console.error);
+    // Use synchronous parsedData from top
     return u; 
   }, [navigate]);
   
@@ -392,12 +437,25 @@ export default function Chatbot() {
     if (!q) return;
     setInput("");
     setMessages(m => [...m, { role:"user", text:q, ts:new Date() }]);
+    
+    // Rotating creative loader
+    const loaders = [
+      "Consulting CGWB...",
+      "Analyzing aquifer data...",
+      "Mapping water blocks...",
+      "Extracting basin telemetry...",
+      "Checking ground reality...",
+      "Diving into the data...",
+      "Locating recharge zones..."
+    ];
+    setLoadingText(loaders[Math.floor(Math.random() * loaders.length)]);
+    
     setTyping(true);
     
     // Quick delay for UI feel
     await new Promise(r => setTimeout(r, 600));
     
-    const res = await getOpenAIResponse(q, data, apiKey, messages);
+    const res = await getOpenAIResponse(q, parsedData, apiKey, messages);
     setTyping(false);
 
     // Add AI message with empty text, then stream it word by word
@@ -551,10 +609,10 @@ export default function Chatbot() {
 
                 {/* Suggestion cards 2×2 */}
                 <div style={{ width:"100%", maxWidth:720, display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:12 }}>
-                  {SUGGESTIONS.slice(0, 4).map((s, i) => (
-                    <div key={i} className="suggestion-card" onClick={() => send(s)} style={{ padding:"16px 18px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, cursor:"pointer", display:"flex", alignItems:"center", gap:12, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+                  {suggestions.map((s, i) => (
+                    <div key={s} className="suggestion-card" onClick={() => send(s)} style={{ padding:"16px 18px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, cursor:"pointer", display:"flex", alignItems:"center", gap:12, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
                       <span style={{ width:32, height:32, borderRadius:8, background:"var(--accent-dim)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:16 }}>
-                        {["💧","📊","⚠️","🔍"][i]}
+                        {SUGGESTION_ICONS[i % SUGGESTION_ICONS.length]}
                       </span>
                       <span style={{ fontSize:13, color:"var(--text)", lineHeight:1.4, fontFamily:"var(--font-body)" }}>{s}</span>
                     </div>
@@ -784,7 +842,7 @@ export default function Chatbot() {
                         <span style={{ color:"var(--accent)", display:"flex" }}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{animation:"spin-slow 3s linear infinite"}}/></svg>
                         </span>
-                        <span style={{ fontSize:12, fontWeight:600, fontFamily:"var(--font-mono)", letterSpacing:"0.05em", textTransform:"uppercase", backgroundImage:"linear-gradient(90deg, var(--text) 0%, var(--muted) 50%, var(--text) 100%)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"shimmer 2.5s linear infinite" }}>Consulting CGWB...</span>
+                        <span style={{ fontSize:12, fontWeight:600, fontFamily:"var(--font-mono)", letterSpacing:"0.05em", textTransform:"uppercase", backgroundImage:"linear-gradient(90deg, var(--text) 0%, var(--muted) 50%, var(--text) 100%)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"shimmer 2.5s linear infinite" }}>{loadingText}</span>
                       </div>
                     </div>
                   </div>
