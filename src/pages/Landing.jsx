@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import { useTheme } from "../components/ThemeContext";
@@ -7,7 +7,6 @@ import { useTheme } from "../components/ThemeContext";
    AquaGuide AI — Landing Page
    Scroll animations: IntersectionObserver on every section
    Micro-interactions: hover, focus, ripple on buttons
-   Parallax: hero glow drifts on scroll
 ══════════════════════════════════════════════════════════ */
 
 const styles = `
@@ -302,14 +301,8 @@ export default function Landing() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
 
-  /* ── Mouse spotlight on hero ── */
+  /* ── Hero ref ── */
   const heroRef = useRef(null);
-  const [mouse, setMouse] = useState({ x: 50, y: 50 });
-  const onMouseMove = useCallback((e) => {
-    const r = heroRef.current?.getBoundingClientRect();
-    if (!r) return;
-    setMouse({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-  }, []);
 
   /* ── Map hover state ── */
   const [hoveredState, setHoveredState] = useState(null);
@@ -425,7 +418,7 @@ export default function Landing() {
       {/* ════════════════════════════════════
           HERO
       ════════════════════════════════════ */}
-      <section ref={heroRef} onMouseMove={onMouseMove} style={{
+      <section ref={heroRef} style={{
         position: "relative", minHeight: "100vh",
         display: "flex", alignItems: "center",
         padding: "120px 56px 80px",
@@ -433,15 +426,7 @@ export default function Landing() {
       }}>
         <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
 
-        {/* Mouse-following spotlight */}
-        <div style={{
-          position: "absolute", pointerEvents: "none",
-          width: 500, height: 500, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,168,232,0.06) 0%, transparent 70%)",
-          left: `calc(${mouse.x}% - 250px)`,
-          top:  `calc(${mouse.y}% - 250px)`,
-          transition: "left 0.4s ease, top 0.4s ease",
-        }} />
+
 
         {/* Parallax glow blobs */}
         <div style={{
@@ -639,7 +624,7 @@ export default function Landing() {
                         </div>
                       )}
                       {m.chart && (
-                        <div style={{ marginTop: 10, background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 8px", display: "flex", alignItems: "flex-end", gap: 4, height: 56 }}>
+                        <div style={{ marginTop: 16, background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 8px", display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
                           {[112,118,128,145,158,164].map((v, i) => (
                             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                               <div style={{ width: "100%", height: `${(v - 100) * 1.5}px`, background: v > 150 ? "#e84040" : v > 130 ? "#f5a623" : "var(--accent)", borderRadius: "3px 3px 0 0", opacity: 0.85, animation: `bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i * 0.1}s both`, transition: "opacity 0.2s", cursor: "default" }}

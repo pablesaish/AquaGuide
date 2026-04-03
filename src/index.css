@@ -222,42 +222,96 @@ body {
 }
 
 /* ─── AI Markdown Styles ─────────────────────── */
-.ai-markdown p { margin-bottom: 12px; line-height: 1.6; }
-.ai-markdown ul, .ai-markdown ol { padding-left: 20px; margin-bottom: 12px; }
-.ai-markdown li { margin-bottom: 6px; }
-.ai-markdown strong { color: var(--accent); }
+.ai-markdown p { margin-bottom: 14px; line-height: 1.7; }
+.ai-markdown p:last-child { margin-bottom: 0; }
+.ai-markdown ul, .ai-markdown ol { padding-left: 20px; margin-bottom: 14px; }
+.ai-markdown li { margin-bottom: 8px; line-height: 1.6; }
+.ai-markdown li::marker { color: var(--muted); }
+.ai-markdown strong { color: var(--text); font-weight: 700; }
+.ai-markdown em { color: var(--text); opacity: 0.85; font-style: italic; }
 .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 {
-  margin-top: 16px; margin-bottom: 10px;
-  color: var(--accent); font-family: var(--font-display);
+  margin-top: 20px; margin-bottom: 12px;
+  font-family: var(--font-display);
+  color: var(--text);
+  font-weight: 700;
+}
+.ai-markdown h1 { font-size: 1.4em; }
+.ai-markdown h2 { font-size: 1.15em; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.ai-markdown h3 { font-size: 1.05em; }
+.ai-markdown blockquote {
+  border-left: 3px solid var(--border);
+  padding: 10px 16px;
+  margin: 14px 0;
+  background: rgba(255,255,255,0.02);
+  border-radius: 0 8px 8px 0;
+  color: var(--muted);
+  font-style: italic;
+}
+.ai-markdown blockquote p { margin-bottom: 0; }
+.ai-markdown code:not([class*="language-"]) {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+.ai-markdown pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 14px 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-markdown pre code {
+  background: none !important;
+  padding: 0 !important;
+  color: var(--text) !important;
+}
+.ai-markdown a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 168, 232, 0.3);
+  transition: border-color 0.2s;
+}
+.ai-markdown a:hover { border-bottom-color: var(--accent); }
+.ai-markdown hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
 }
 .ai-markdown table {
   width: 100%; border-collapse: collapse;
   margin-bottom: 16px; font-size: 13px;
   font-family: var(--font-body);
   overflow: hidden; border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
 }
 .ai-markdown th, .ai-markdown td {
   padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left;
 }
 .ai-markdown th {
-  background: var(--accent-dim); color: var(--accent);
+  background: rgba(255,255,255,0.04); color: var(--text);
   font-weight: 600; text-transform: uppercase;
   font-size: 11px; letter-spacing: 0.05em; font-family: var(--font-mono);
 }
 .ai-markdown tr:last-child td { border-bottom: none; }
-.ai-markdown tr:hover td { background: var(--accent-dim); transition: background 0.2s; }
+.ai-markdown tr:hover td { background: rgba(255,255,255,0.02); transition: background 0.2s; }
 
 /* ─── Form Input Focus ───────────────────────── */
-.auth-input:focus, .auth-select:focus, .chat-input:focus {
+.auth-input:focus, .auth-select:focus {
   border-color: rgba(0, 168, 232, 0.4) !important;
   outline: none;
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 [data-theme="light"] .auth-input:focus,
-[data-theme="light"] .auth-select:focus,
-[data-theme="light"] .chat-input:focus {
+[data-theme="light"] .auth-select:focus {
   border-color: rgba(0, 120, 212, 0.5) !important;
   box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
 }

@@ -14,37 +14,129 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 const css = `
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-}
-}
+@keyframes avatarPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,168,232,0.4);}70%{box-shadow:0 0 0 8px rgba(0,168,232,0);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.chat-avatar-ai{animation:avatarPulse 2.5s infinite;}
+.suggestion-card{transition:all 0.3s cubic-bezier(.22,1,.36,1);}
+.suggestion-card:hover{border-color:rgba(0,168,232,0.5)!important;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,168,232,0.15)!important;background:var(--surface-hover)!important;}
+.input-glass{transition:border-color 0.3s,box-shadow 0.3s;}
+.input-glass:focus-within{border-color:rgba(0,168,232,0.5)!important;box-shadow:0 0 0 3px rgba(0,168,232,0.08),0 8px 32px rgba(0,0,0,0.2)!important;}
+.streaming-cursor::after{content:'▊';color:var(--accent);animation:blink 0.8s step-end infinite;margin-left:2px;font-size:0.9em;}
 `;
 
 const SUGGESTIONS = [
   "Groundwater status in Maharashtra",
-  "Over-exploited blocks in Rajasthan 2023",
+  "Over-exploited blocks in Rajasthan",
   "Which districts in Gujarat are critical?",
   "Compare Punjab and UP extraction rates",
   "Summarize Tamil Nadu groundwater data",
   "Show safe zones in Karnataka",
 ];
 
-async function getOpenAIResponse(query, data, apiKey) {
+async function getOpenAIResponse(query, data, apiKey, chatHistory = []) {
   if (!apiKey) return { text: "Please enter your OpenAI API Key down below to enable AI responses.", data: null };
   if (!data) return { text: "Data is loading...", data: null };
   
-  const q = query.toLowerCase();
+  // ────── ABBREVIATION & ALIAS MAP ──────
+  const STATE_ALIASES = {
+    // Common abbreviations
+    "up": "UTTAR PRADESH", "mp": "MADHYA PRADESH", "ap": "ANDHRA PRADESH",
+    "ts": "TELANGANA", "tn": "TAMILNADU", "wb": "WEST BENGAL",
+    "hp": "HIMACHAL PRADESH", "uk": "UTTARAKHAND", "jk": "JAMMU AND KASHMIR",
+    "j&k": "JAMMU AND KASHMIR", "j and k": "JAMMU AND KASHMIR",
+    "cg": "CHHATTISGARH", "rj": "RAJASTHAN", "raj": "RAJASTHAN",
+    "mh": "MAHARASHTRA", "gj": "GUJARAT", "guj": "GUJARAT",
+    "ka": "KARNATAKA", "kr": "KERALA", "pb": "PUNJAB",
+    "hr": "HARYANA", "br": "BIHAR", "jh": "JHARKHAND",
+    "or": "ODISHA", "ga": "GOA", "sk": "SIKKIM",
+    "mn": "MANIPUR", "ml": "MEGHALAYA", "mz": "MIZORAM",
+    "nl": "NAGALAND", "tr": "TRIPURA", "ar": "ARUNACHAL PRADESH",
+    "as": "ASSAM", "dl": "DELHI", "ch": "CHANDIGARH",
+    "ld": "LAKSHADWEEP", "py": "PUDUCHERRY", "an": "ANDAMAN AND NICOBAR ISLANDS",
+    "dd": "DAMAN AND DIU", "dn": "DADRA AND NAGAR HAVELI",
+    // Common short names / misspellings
+    "uttar pradesh": "UTTAR PRADESH", "madhya pradesh": "MADHYA PRADESH",
+    "andhra pradesh": "ANDHRA PRADESH", "andhra": "ANDHRA PRADESH",
+    "arunachal pradesh": "ARUNACHAL PRADESH", "arunachal": "ARUNACHAL PRADESH",
+    "himachal pradesh": "HIMACHAL PRADESH", "himachal": "HIMACHAL PRADESH",
+    "tamil nadu": "TAMILNADU", "tamilnadu": "TAMILNADU",
+    "west bengal": "WEST BENGAL", "bengal": "WEST BENGAL",
+    "uttarakhand": "UTTARAKHAND", "uttrakhand": "UTTARAKHAND",
+    "chhattisgarh": "CHHATTISGARH", "chattisgarh": "CHHATTISGARH", "chhatisgarh": "CHHATTISGARH",
+    "jharkhand": "JHARKHAND", "jarkhand": "JHARKHAND",
+    "maharashtra": "MAHARASHTRA", "maha": "MAHARASHTRA",
+    "rajasthan": "RAJASTHAN", "gujarat": "GUJARAT",
+    "karnataka": "KARNATAKA", "kerala": "KERALA",
+    "punjab": "PUNJAB", "haryana": "HARYANA", "bihar": "BIHAR",
+    "odisha": "ODISHA", "orissa": "ODISHA",
+    "telangana": "TELANGANA", "telengana": "TELANGANA",
+    "goa": "GOA", "sikkim": "SIKKIM", "manipur": "MANIPUR",
+    "meghalaya": "MEGHALAYA", "mizoram": "MIZORAM", "nagaland": "NAGALAND",
+    "tripura": "TRIPURA", "assam": "ASSAM",
+    "delhi": "DELHI", "new delhi": "DELHI",
+    "chandigarh": "CHANDIGARH", "puducherry": "PUDUCHERRY", "pondicherry": "PUDUCHERRY",
+    "ladakh": "LADAKH", "lakshadweep": "LAKSHADWEEP",
+    "andaman": "ANDAMAN AND NICOBAR ISLANDS", "nicobar": "ANDAMAN AND NICOBAR ISLANDS",
+    "daman": "DAMAN AND DIU", "diu": "DAMAN AND DIU",
+    "dadra": "DADRA AND NAGAR HAVELI", "nagar haveli": "DADRA AND NAGAR HAVELI",
+    "jammu": "JAMMU AND KASHMIR", "kashmir": "JAMMU AND KASHMIR",
+  };
+
+  // ────── SMART QUERY PREPROCESSING ──────
+  let q = query.toLowerCase().trim();
   
-  // To avoid sending 6MB on every request, we smartly filter the data sent to the LLM based on the query.
+  // Expand abbreviations in the query for matching
+  const resolveAliases = (input) => {
+    const words = input.split(/\s+/);
+    const resolved = [];
+    // First try multi-word matches (longest first)
+    let i = 0;
+    while (i < words.length) {
+      let matched = false;
+      // Try 4-word, 3-word, 2-word combos first
+      for (let len = Math.min(4, words.length - i); len >= 1; len--) {
+        const phrase = words.slice(i, i + len).join(" ");
+        if (STATE_ALIASES[phrase]) {
+          resolved.push(STATE_ALIASES[phrase]);
+          i += len;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        resolved.push(words[i]);
+        i++;
+      }
+    }
+    return resolved;
+  };
+  
+  const resolvedTokens = resolveAliases(q);
+  
+  // ────── CONTEXT BUILDING ──────
   let contextData = {};
   const states = Object.keys(data.stateStats);
   
-  // Find which state(s) the user explicitly mentioned
-  const matchedStates = states.filter(s => q.includes(s.toLowerCase()));
+  // Match states from resolved tokens
+  const matchedStates = [];
+  states.forEach(s => {
+    // Direct full-name match
+    if (q.includes(s.toLowerCase())) {
+      if (!matchedStates.includes(s)) matchedStates.push(s);
+      return;
+    }
+    // Match via resolved aliases
+    if (resolvedTokens.includes(s)) {
+      if (!matchedStates.includes(s)) matchedStates.push(s);
+    }
+  });
   
-  // Also find which district(s) the user explicitly mentioned, and include their state automatically
+  // Also find districts — match against resolved query AND original query
   const matchedDistricts = [];
   states.forEach(s => {
     Object.keys(data.stateStats[s].districts).forEach(dist => {
-      if (q.includes(dist.toLowerCase())) {
+      const dl = dist.toLowerCase();
+      if (q.includes(dl) || resolvedTokens.some(t => t.toLowerCase() === dl)) {
         matchedDistricts.push(dist);
         if (!matchedStates.includes(s)) matchedStates.push(s);
       }
@@ -52,24 +144,91 @@ async function getOpenAIResponse(query, data, apiKey) {
   });
 
   if (matchedStates.length > 0) {
-    // If a state or district was matched, pass the full state object (which includes districts) to Gemini
     matchedStates.forEach(s => contextData[s] = data.stateStats[s]);
   } else {
-    // Basic overview if no specific state or district is mentioned
-    contextData = {
-      nationalSummary: data.national,
-      stateOverview: Object.fromEntries(
-        Object.entries(data.stateStats).map(([s, stat]) => [s, { safe: stat.safe, overExploited: stat.over, total: stat.total }])
-      )
-    };
+    // ────── CONVERSATION HISTORY CONTEXT ──────
+    // If no state found in current query, check recent messages for context
+    const recentMsgs = chatHistory.slice(-4).map(m => m.text.toLowerCase()).join(" ");
+    const historyResolvedTokens = resolveAliases(recentMsgs);
+    
+    const historyMatchedStates = [];
+    states.forEach(s => {
+      if (recentMsgs.includes(s.toLowerCase()) || historyResolvedTokens.includes(s)) {
+        if (!historyMatchedStates.includes(s)) historyMatchedStates.push(s);
+      }
+    });
+    
+    if (historyMatchedStates.length > 0) {
+      // Use states from conversation history
+      historyMatchedStates.forEach(s => contextData[s] = data.stateStats[s]);
+    } else {
+      // Truly no match — pass national summary
+      contextData = {
+        nationalSummary: data.national,
+        stateOverview: Object.fromEntries(
+          Object.entries(data.stateStats).map(([s, stat]) => [s, { safe: stat.safe, semiCritical: stat.semi, critical: stat.critical, overExploited: stat.over, total: stat.total }])
+        )
+      };
+    }
   }
 
   const prompt = `
-You are AquaGuide AI, an expert, human-friendly groundwater intelligence assistant for India.
-You strictly answer based on the provided FY 2024-25 India groundwater data below. 
-Analyze the data and give your answers in a conversational, friendly paragraph format instead of just raw lists. 
-Highlight key insights, be interactive, and explain the significance of the numbers. 
-If the user asks about multiple categories of things (like Safe vs Critical numbers), or if a chart would make the data clearer, YOU MUST include a JSON block in this exact format at the very end of your response:
+You are AquaGuide AI, a friendly and intelligent groundwater assistant for India.
+
+CONVERSATION RULES:
+- If the user says a greeting (hi, hello, hey, namaste, etc.), respond warmly and briefly. Introduce yourself and ask how you can help with groundwater queries. Do NOT dump data.
+- If the user says thanks, goodbye, okay, cool, etc., respond naturally and briefly like a human would.
+- If the user asks something unrelated to groundwater or water (like weather, sports, coding, etc.), politely say you specialize in groundwater intelligence and redirect them. 
+- If the user asks "what can you do" or "help", list your capabilities briefly.
+- ONLY use the DATA CONTEXT below when the user asks an actual groundwater/water-related question.
+
+CONTEXT AWARENESS (VERY IMPORTANT):
+- You receive the last few messages of the conversation. USE THEM to understand what the user is referring to.
+- If the user says "it", "this state", "that", "there", "which districts in it", etc., look at the previous messages to figure out which state/district they mean.
+- ALWAYS continue the conversation in the context of the topic being discussed. Do NOT switch to national data unless explicitly asked.
+- Understand common typos, grammatical errors, abbreviations, and informal language. Examples: "gimme", "wats", "hw is", "tel me", "show me abt", "kritical" = critical, "xploited" = exploited, "grndwater" = groundwater.
+
+DATA ACCURACY RULES (CRITICAL — FOLLOW STRICTLY):
+- You are part of the INGRES (India's National Ground Water Resource Estimation System).
+- You ONLY have CGWB (Central Ground Water Board) assessment data for FY 2024-25. NO other year exists.
+- If the user asks about 2023, 2022, 2020, or ANY other year: say "I only have FY 2024-25 data from CGWB. Would you like me to show that instead?"
+- NEVER fabricate, guess, estimate, or hallucinate ANY number. Every number you cite MUST come from the DATA CONTEXT below.
+- If a state, district, or block is NOT in the DATA CONTEXT, say "I don't have data for [name] in my database."
+- Do NOT use your general training knowledge for any data answers. ONLY use what is in DATA CONTEXT.
+
+AVAILABLE DATA FIELDS (per district/block):
+- Rainfall (mm), Geographical area (ha), Recharge worthy area
+- Ground Water Recharge (from rainfall, canals, irrigation, tanks, conservation structures)
+- Annual Ground Water Recharge, Environmental Flows
+- Annual Extractable Ground Water Resource
+- Ground Water Extraction for all uses
+- Stage of Ground Water Extraction (%) — this determines category: Safe (<70%), Semi-Critical (70-90%), Critical (90-100%), Over-Exploited (>100%)
+- Allocation for Domestic Use (projected 2025)
+- Net Annual Ground Water Availability for Future Use
+- Quality Tagging (what contaminants are present)
+- Additional Potential Resources (waterlogged, flood prone, spring discharge)
+- In-Storage resources (confined/unconfined, fresh/saline)
+
+
+WHEN ANSWERING DATA QUESTIONS, format systematically:
+
+1. **Start with a 1-2 sentence summary** of the big picture.
+
+2. **Use markdown headers** (##) to organize into sections like:
+   ## 📊 Overview
+   ## 🔍 Key Findings  
+   ## ⚠️ Critical Areas
+   ## 💡 Recommendations
+
+3. **Use bullet points** for multiple data points — never dump raw numbers in paragraphs.
+
+4. **Bold key numbers** like **86%** or **31 out of 36 units**.
+
+5. **NEVER use markdown tables** (no | pipes). Instead, use bullet points with bold labels for comparisons.
+
+6. **End with a Takeaway or Recommendation**.
+
+CHART RULES: When the query involves categories, comparisons, or distributions — include a chart at the VERY END:
 \`\`\`chart
 {
   "type": "pie", 
@@ -78,9 +237,11 @@ If the user asks about multiple categories of things (like Safe vs Critical numb
   "data": [10, 20]
 }
 \`\`\`
-Use "pie", "bar", "line", or "area" for the chart type. Use "line" or "area" for trends over time or continuous data.
+Use "pie", "bar", "line", or "area". Use "line"/"area" for time trends.
 
 DATA CONTEXT:
+Source: CGWB INGRES (India's National Ground Water Resource Estimation System) — reportData for FY 2024-25.
+${matchedStates.length > 0 ? `User query resolved to: ${matchedStates.join(", ")}${matchedDistricts.length > 0 ? ` (Districts: ${matchedDistricts.join(", ")})` : ""}` : "No specific state/district matched — showing national overview."}
 ${JSON.stringify(contextData)}
 
 User Query: "${query}"
@@ -88,10 +249,18 @@ User Query: "${query}"
 
   try {
     const openai = new OpenAI({ apiKey: apiKey, dangerouslyAllowBrowser: true });
+    
+    // Build conversation history for context awareness
+    const historyMessages = chatHistory.slice(-6).map(m => ({
+      role: m.role === "ai" ? "assistant" : "user",
+      content: m.text
+    }));
+    
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // fallback to gpt-3.5-turbo if needed, but 4o-mini is standard
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: prompt },
+        ...historyMessages,
         { role: "user", content: query }
       ]
     });
@@ -107,14 +276,13 @@ export default function Chatbot() {
   const [user, setUser] = useState(null);
   const [data, setData] = useState(null);
 
-  const defaultWelcome = { role:"ai", text:"Hello! I'm AquaGuide AI, your groundwater intelligence assistant. I can help you query our detailed FY 2024-25 assessment data across India. What would you like to know?", ts: new Date() };
-  
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
-  const [messages, setMessages] = useState([defaultWelcome]);
+  const [messages, setMessages] = useState([]);
   
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [streamingIdx, setStreamingIdx] = useState(-1); // index of currently streaming message
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem("OPENAI_KEY") || "");
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -148,7 +316,7 @@ export default function Chatbot() {
 
   // Persist messages to active session
   useEffect(() => {
-    if (messages.length <= 1 || !user) return;
+    if (messages.length === 0 || !user) return;
 
     const serializedMessages = messages.map(m => ({
       role: m.role,
@@ -191,7 +359,7 @@ export default function Chatbot() {
   const startNewChat = () => {
     activeSessionRef.current = null;   // clear ref synchronously
     setActiveSessionId(null);
-    setMessages([{...defaultWelcome, ts: new Date()}]);
+    setMessages([]);
   };
   
   const loadSession = (id) => {
@@ -226,10 +394,60 @@ export default function Chatbot() {
     // Quick delay for UI feel
     await new Promise(r => setTimeout(r, 600));
     
-    const res = await getOpenAIResponse(q, data, apiKey);
-    
+    const res = await getOpenAIResponse(q, data, apiKey, messages);
     setTyping(false);
-    setMessages(m => [...m, { role:"ai", text:res.text, data:res.data, ts:new Date() }]);
+
+    // Add AI message with empty text, then stream it word by word
+    const fullText = res.text;
+    const aiMsg = { role:"ai", text:"", data:res.data, ts:new Date() };
+    setMessages(m => [...m, aiMsg]);
+    setStreamingIdx(prev => {
+      // will be set to messages.length (the index of the new msg)
+      return -2; // trigger below
+    });
+
+    // Stream line-by-line (tables need complete blocks to render)
+    const lines = fullText.split("\n");
+    let accumulated = "";
+    let i = 0;
+    while (i < lines.length) {
+      // Detect table blocks (lines starting with |) and buffer them
+      if (lines[i].trimStart().startsWith("|")) {
+        let tableBlock = "";
+        while (i < lines.length && lines[i].trimStart().startsWith("|")) {
+          tableBlock += (tableBlock ? "\n" : "") + lines[i];
+          i++;
+        }
+        accumulated += (accumulated ? "\n" : "") + tableBlock;
+        const snapshot = accumulated;
+        setMessages(m => {
+          const updated = [...m];
+          updated[updated.length - 1] = { ...updated[updated.length - 1], text: snapshot };
+          return updated;
+        });
+        await new Promise(r => setTimeout(r, 60));
+      } else {
+        // Stream normal lines word-by-word
+        const lineWords = lines[i].split(/( )/);
+        const linePrefix = accumulated ? accumulated + "\n" : "";
+        let lineAccum = "";
+        for (let w = 0; w < lineWords.length; w++) {
+          lineAccum += lineWords[w];
+          const snapshot = linePrefix + lineAccum;
+          setMessages(m => {
+            const updated = [...m];
+            updated[updated.length - 1] = { ...updated[updated.length - 1], text: snapshot };
+            return updated;
+          });
+          const word = lineWords[w];
+          const delay = /[.!?\n]/.test(word) ? 40 : word === " " ? 10 : 18;
+          await new Promise(r => setTimeout(r, delay));
+        }
+        accumulated = linePrefix + lineAccum;
+        i++;
+      }
+    }
+    setStreamingIdx(-1);
   };
 
   const fmt = (d) => d.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" });
@@ -274,12 +492,9 @@ export default function Chatbot() {
               </div>
             )}
 
-            <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>Try asking</div>
-            {SUGGESTIONS.map((s,i) => (
-              <div key={i} className="suggest-chip" onClick={()=>send(s)} style={{ padding:"9px 12px", marginBottom:6, background:"rgba(0,168,232,0.03)", border:"1px solid rgba(0,168,232,0.1)", borderRadius:7, fontSize:12, color:"var(--muted)", cursor:"pointer", transition:"all 0.2s", fontFamily:"var(--font-mono)", lineHeight:1.4 }}>
-                {s}
-              </div>
-            ))}
+            {sessions.length === 0 && (
+              <div style={{ textAlign:"center", marginTop:40, color:"var(--muted)", fontSize:13, fontFamily:"var(--font-mono)" }}>No previous chats</div>
+            )}
           </div>
         </aside>
 
@@ -316,210 +531,299 @@ export default function Chatbot() {
           </div>
 
           {/* Messages */}
-          <div style={{ flex:1, overflowY:"auto", padding:"24px", display:"flex", flexDirection:"column", gap:16 }}>
-            {messages.map((m,i) => (
-              <div key={i} className="msg-bubble" style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", animation:`fadeUp 0.3s ease both`, transition:"transform 0.2s" }}>
-                {m.role==="ai" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #0078d4, #00a8e8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:12, marginRight:10, flexShrink:0, boxShadow:"0 0 12px rgba(0,168,232,0.2)" }}>
-                    <img src="/ingres.svg" alt="" />
+          <div style={{ flex:1, overflowY:"auto", padding:0, display:"flex", flexDirection:"column" }}>
+            {messages.length === 0 ? (
+              /* ═══ Welcome Empty State ═══ */
+              <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 24px", animation:"fadeUp 0.6s ease both" }}>
+                {/* Logo */}
+                <div style={{ position:"relative", marginBottom:28 }}>
+                  <div style={{ position:"absolute", inset:-12, background:"var(--accent)", filter:"blur(28px)", opacity:0.08, borderRadius:"50%" }} />
+                  <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(0,168,232,0.1)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", position:"relative", zIndex:1 }}>
+                    <img src="/ingres.svg" alt="" style={{ width:32 }} />
                   </div>
-                )}
-                <div style={{ maxWidth:"72%" }}>
-                  <div style={{ padding:"12px 16px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?"var(--accent)":"var(--surface)", border:m.role==="ai"?"1px solid var(--border)":"none", color:m.role==="user"?"var(--bg)":"var(--text)", fontSize:14, lineHeight:1.6, fontWeight:m.role==="user"?500:400 }}>
-                    {m.role === "user" ? m.text : (
-                      <div className="ai-markdown">
-                        <ReactMarkdown 
-                          rehypePlugins={[rehypeRaw]}
-                          components={{
-                            code({node, inline, className, children, ...props}) {
-                              const match = /language-(\w+)/.exec(className || '')
-                              if (!inline && match && match[1] === 'chart') {
-                                try {
-                                  const chartConfig = JSON.parse(String(children).replace(/\n/g, ''));
-                                  
-                                  const chartData = {
-                                    labels: chartConfig.labels,
-                                    datasets: [{
-                                      label: chartConfig.title || 'Data',
-                                      data: chartConfig.data,
-                                      backgroundColor: [
-                                        'rgba(0, 168, 232, 0.85)', 
-                                        'rgba(240, 220, 58, 0.85)', 
-                                        'rgba(245, 166, 35, 0.85)', 
-                                        'rgba(232, 64, 64, 0.85)', 
-                                        'rgba(0, 120, 212, 0.85)', 
-                                        'rgba(90, 119, 138, 0.85)'
-                                      ],
-                                      hoverBackgroundColor: [
-                                        'var(--accent)', '#f0dc3a', '#f5a623', '#e84040', 'var(--accent2)', '#7888a8'
-                                      ],
-                                      borderColor: 'var(--surface)',
-                                      borderWidth: 2,
-                                      hoverOffset: chartConfig.type === 'pie' ? 12 : 0,
-                                      borderRadius: chartConfig.type === 'bar' ? 6 : 0,
-                                    }]
-                                  };
-                                  
-                                  const options = {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    animation: { animateScale: true, animateRotate: true, duration: 800 },
-                                    plugins: { 
-                                      legend: { 
-                                        position: 'bottom',
-                                        labels: { color: 'var(--text)', padding: 16, font: { family: "'DM Sans', sans-serif", size: 12 }, usePointStyle: true, pointStyle: 'circle' } 
-                                      }, 
-                                      title: { display: !!chartConfig.title, text: chartConfig.title, color: 'var(--accent)', font: { family: "'Playfair Display', serif", size: 16, weight: 'bold' }, padding: { bottom: 20 } },
-                                      tooltip: {
-                                        backgroundColor: 'var(--surface-glass)',
-                                        titleColor: 'var(--accent)',
-                                        bodyColor: 'var(--text)',
-                                        borderColor: 'var(--border)',
-                                        borderWidth: 1,
-                                        padding: 12,
-                                        cornerRadius: 8,
-                                        displayColors: true,
-                                        boxPadding: 6,
-                                        callbacks: {
-                                          label: function(context) {
-                                            const label = context.label || '';
-                                            const value = context.raw || 0;
-                                            return ` ${label}: ${value}`;
-                                          }
-                                        }
-                                      }
-                                    },
-                                    scales: chartConfig.type === 'bar' ? {
-                                      y: { ticks: { color: 'var(--muted)', font:{family:"'DM Mono', monospace"} }, grid: { color: 'rgba(0, 168, 232, 0.05)', tickLength: 0 }, border: { dash: [4,4], display: false } },
-                                      x: { ticks: { color: 'var(--text)', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
-                                    } : {}
-                                  };
+                </div>
 
-                                  const isRecharts = chartConfig.type === 'line' || chartConfig.type === 'area';
-                                  
-                                  if (isRecharts) {
-                                    const rechartsData = chartConfig.labels.map((label, i) => ({
-                                      name: label,
-                                      value: chartConfig.data[i]
-                                    }));
-                                    
-                                    const CustomTooltip = ({ active, payload, label }) => {
-                                      if (active && payload && payload.length) {
+                <h2 style={{ fontFamily:"var(--font-display)", fontSize:28, marginBottom:12, color:"var(--text)", fontWeight:700, textAlign:"center" }}>How can I help you today?</h2>
+                <p style={{ color:"var(--muted)", maxWidth:520, textAlign:"center", lineHeight:1.7, marginBottom:40, fontSize:14 }}>Ask about groundwater status, extraction rates, critical zones, or water quality across <strong style={{color:'var(--text)'}}>713+ districts</strong> and <strong style={{color:'var(--text)'}}>36 states/UTs</strong> — powered by CGWB FY 2024-25 data.</p>
+
+                {/* Suggestion cards 2×2 */}
+                <div style={{ width:"100%", maxWidth:720, display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:12 }}>
+                  {SUGGESTIONS.slice(0, 4).map((s, i) => (
+                    <div key={i} className="suggestion-card" onClick={() => send(s)} style={{ padding:"16px 18px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, cursor:"pointer", display:"flex", alignItems:"center", gap:12, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+                      <span style={{ width:32, height:32, borderRadius:8, background:"var(--accent-dim)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:16 }}>
+                        {["💧","📊","⚠️","🔍"][i]}
+                      </span>
+                      <span style={{ fontSize:13, color:"var(--text)", lineHeight:1.4, fontFamily:"var(--font-body)" }}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* ═══ Conversation View ═══ */
+              <div style={{ padding:"24px 24px 24px", display:"flex", flexDirection:"column", gap:8, maxWidth:900, margin:"0 auto", width:"100%" }}>
+                {messages.map((m, i) => {
+                  const isFirstAiAfterUser = m.role === "ai" && i > 0 && messages[i-1]?.role === "user";
+                  const isUser = m.role === "user";
+                  return (
+                  <div key={i} style={{ display:"flex", flexDirection:"column", alignItems: isUser ? "flex-end" : "flex-start", animation:"fadeUp 0.3s ease both", marginTop: isUser ? 16 : (isFirstAiAfterUser ? 4 : (i > 0 && messages[i-1]?.role === "user" ? 16 : 0)) }}>
+                    {isUser ? (
+                      /* ─ User message ─ */
+                      <div style={{ display:"flex", alignItems:"flex-end", gap:10, flexDirection:"row-reverse", maxWidth:"75%" }}>
+                        <div style={{ width:30, height:30, borderRadius:"50%", background:"rgba(0,168,232,0.12)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)", fontSize:12, fontWeight:600, fontFamily:"var(--font-ui)", flexShrink:0 }}>
+                          {(user?.displayName||user?.email||"U")[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ padding:"12px 16px", borderRadius:"18px 18px 4px 18px", background:"linear-gradient(135deg, var(--accent2), var(--accent))", color:"var(--btn-text)", fontSize:14, lineHeight:1.6, fontWeight:500 }}>
+                            {m.text}
+                          </div>
+                          <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", marginTop:4, textAlign:"right", opacity:0.7 }}>{fmt(m.ts)}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ─ AI message ─ */
+                      <div style={{ width:"100%", display:"flex", gap:12, alignItems:"flex-start" }}>
+                        <div className="chat-avatar-ai" style={{ width:30, height:30, borderRadius:"50%", background:"rgba(0,168,232,0.1)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
+                          <img src="/ingres.svg" alt="" style={{ width:18 }} />
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          {/* AI label + copy */}
+                          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                            <span style={{ fontSize:11, fontWeight:600, color:"var(--muted)", fontFamily:"var(--font-mono)", letterSpacing:"0.03em" }}>AquaGuide AI</span>
+                            {i > 0 && m.text && (
+                              <button 
+                                onClick={() => { navigator.clipboard.writeText(m.text); }}
+                                style={{ background:"none", border:"1px solid var(--border)", borderRadius:6, padding:"3px 8px", cursor:"pointer", color:"var(--muted)", fontSize:10, fontFamily:"var(--font-mono)", transition:"all 0.2s", display:"flex", alignItems:"center", gap:4 }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" strokeWidth="2"/></svg>
+                                Copy
+                              </button>
+                            )}
+                          </div>
+                          <div className={`ai-markdown${i === messages.length - 1 && streamingIdx !== -1 ? ' streaming-cursor' : ''}`} style={{ color:"var(--text)", fontSize:14, lineHeight:1.75, fontWeight:400 }}>
+                            <ReactMarkdown 
+                              rehypePlugins={[rehypeRaw]}
+                              components={{
+                                a({ href, children, ...props }) {
+                                  return <a href={href} target="_blank" rel="noopener noreferrer" style={{ color:"var(--accent)", textDecoration:"none", borderBottom:"1px solid rgba(0,168,232,0.3)" }} {...props}>{children}</a>;
+                                },
+                                code({node, inline, className, children, ...props}) {
+                                  const match = /language-(\w+)/.exec(className || '')
+                                  if (!inline && match && match[1] === 'chart') {
+                                    try {
+                                      const chartConfig = JSON.parse(String(children).replace(/\n/g, ''));
+                                      
+                                      const chartData = {
+                                        labels: chartConfig.labels,
+                                        datasets: [{
+                                          label: chartConfig.title || 'Data',
+                                          data: chartConfig.data,
+                                          backgroundColor: [
+                                            'rgba(0, 168, 232, 0.85)', 
+                                            'rgba(240, 220, 58, 0.85)', 
+                                            'rgba(245, 166, 35, 0.85)', 
+                                            'rgba(232, 64, 64, 0.85)', 
+                                            'rgba(0, 120, 212, 0.85)', 
+                                            'rgba(90, 119, 138, 0.85)'
+                                          ],
+                                          hoverBackgroundColor: [
+                                            'var(--accent)', '#f0dc3a', '#f5a623', '#e84040', 'var(--accent2)', '#7888a8'
+                                          ],
+                                          borderColor: '#0a1830',
+                                          borderWidth: 2,
+                                          hoverOffset: chartConfig.type === 'pie' ? 12 : 0,
+                                          borderRadius: chartConfig.type === 'bar' ? 6 : 0,
+                                        }]
+                                      };
+                                      
+                                      const options = {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        animation: { animateScale: true, animateRotate: true, duration: 800 },
+                                        plugins: { 
+                                          legend: { 
+                                            position: 'bottom',
+                                            labels: { color: '#dde8f0', padding: 16, font: { family: "'DM Sans', sans-serif", size: 12 }, usePointStyle: true, pointStyle: 'circle' } 
+                                          }, 
+                                          title: { display: !!chartConfig.title, text: chartConfig.title, color: '#00a8e8', font: { family: "'Playfair Display', serif", size: 16, weight: 'bold' }, padding: { bottom: 20 } },
+                                          tooltip: {
+                                            backgroundColor: 'rgba(10, 24, 48, 0.9)',
+                                            titleColor: '#00a8e8',
+                                            bodyColor: '#dde8f0',
+                                            borderColor: '#163054',
+                                            borderWidth: 1,
+                                            padding: 12,
+                                            cornerRadius: 8,
+                                            displayColors: true,
+                                            boxPadding: 6,
+                                            callbacks: {
+                                              label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.raw || 0;
+                                                return ` ${label}: ${value}`;
+                                              }
+                                            }
+                                          }
+                                        },
+                                        scales: chartConfig.type === 'bar' ? {
+                                          y: { ticks: { color: '#5a7a9e', font:{family:"'DM Mono', monospace"} }, grid: { color: 'rgba(0, 168, 232, 0.05)', tickLength: 0 }, border: { dash: [4,4], display: false } },
+                                          x: { ticks: { color: '#dde8f0', font:{family:"'DM Sans', sans-serif"} }, grid: { display: false } }
+                                        } : {}
+                                      };
+
+                                      const isRecharts = chartConfig.type === 'line' || chartConfig.type === 'area';
+                                      
+                                      if (isRecharts) {
+                                        const rechartsData = chartConfig.labels.map((label, idx) => ({
+                                          name: label,
+                                          value: chartConfig.data[idx]
+                                        }));
+                                        
+                                        const CustomTooltip = ({ active, payload, label }) => {
+                                          if (active && payload && payload.length) {
+                                            return (
+                                              <div style={{ background: 'var(--surface-glass)', border: '1px solid var(--border)', padding: 12, borderRadius: 8, backdropFilter:"blur(8px)" }}>
+                                                <p style={{ color: 'var(--accent)', margin: 0, paddingBottom: 6, borderBottom: '1px solid var(--border)', fontFamily: "var(--font-display)" }}>{label}</p>
+                                                <p style={{ color: 'var(--text)', margin: 0, paddingTop: 6, fontFamily: "var(--font-mono)", fontSize: 13 }}>Value: {payload[0].value}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        };
+
                                         return (
-                                          <div style={{ background: 'var(--surface-glass)', border: '1px solid var(--border)', padding: 12, borderRadius: 8 }}>
-                                            <p style={{ color: 'var(--accent)', margin: 0, paddingBottom: 6, borderBottom: '1px solid var(--border)', fontFamily: "var(--font-display)" }}>{label}</p>
-                                            <p style={{ color: 'var(--text)', margin: 0, paddingTop: 6, fontFamily: "var(--font-mono)", fontSize: 13 }}>Value: {payload[0].value}</p>
+                                          <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 16, marginBottom: 8, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: "380px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
+                                               onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.01)"}
+                                               onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+                                            {chartConfig.title && <h3 style={{ textAlign: 'center', color: 'var(--accent)', fontFamily: "var(--font-display)", marginBottom: 16, marginTop: 0 }}>{chartConfig.title}</h3>}
+                                            <ResponsiveContainer width="100%" height="85%">
+                                              {chartConfig.type === 'line' ? (
+                                                <LineChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
+                                                  <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                                  <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                                  <RechartsTooltip content={<CustomTooltip />} />
+                                                  <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
+                                                  <Line type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--accent)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--bg)' }} />
+                                                </LineChart>
+                                              ) : (
+                                                <AreaChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                                  <defs>
+                                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8}/>
+                                                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                  </defs>
+                                                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
+                                                  <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
+                                                  <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
+                                                  <RechartsTooltip content={<CustomTooltip />} />
+                                                  <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
+                                                  <Area type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                                </AreaChart>
+                                              )}
+                                            </ResponsiveContainer>
                                           </div>
                                         );
                                       }
-                                      return null;
-                                    };
 
-                                    return (
-                                      <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
-                                           onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
-                                           onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
-                                        {chartConfig.title && <h3 style={{ textAlign: 'center', color: 'var(--accent)', fontFamily: "var(--font-display)", marginBottom: 16, marginTop: 0 }}>{chartConfig.title}</h3>}
-                                        <ResponsiveContainer width="100%" height="85%">
-                                          {chartConfig.type === 'line' ? (
-                                            <LineChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
-                                              <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
-                                              <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
-                                              <RechartsTooltip content={<CustomTooltip />} />
-                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
-                                              <Line type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--accent)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--bg)' }} />
-                                            </LineChart>
-                                          ) : (
-                                            <AreaChart data={rechartsData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                                              <defs>
-                                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8}/>
-                                                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
-                                                </linearGradient>
-                                              </defs>
-                                              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0, 168, 232, 0.05)" vertical={false} />
-                                              <XAxis dataKey="name" stroke="var(--text)" tick={{ fill: 'var(--text)', fontSize: 12, fontFamily: "var(--font-body)" }} axisLine={false} tickLine={false} />
-                                              <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} />
-                                              <RechartsTooltip content={<CustomTooltip />} />
-                                              <RechartsLegend wrapperStyle={{ paddingTop: 10, fontFamily: "var(--font-body)", fontSize: 12, color: 'var(--text)' }} />
-                                              <Area type="monotone" dataKey="value" name={chartConfig.title || "Value"} stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                                            </AreaChart>
-                                          )}
-                                        </ResponsiveContainer>
-                                      </div>
-                                    );
+                                      return (
+                                        <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 16, marginBottom: 8, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: chartConfig.type === 'pie' ? "420px" : "380px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s", paddingBottom: "30px" }} 
+                                             onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.01)"}
+                                             onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+                                          {chartConfig.type === 'pie' ? <Pie data={chartData} options={options} /> : <Bar data={chartData} options={options} />}
+                                        </div>
+                                      );
+                                    } catch (e) {
+                                      return (
+                                        <div style={{ background:"var(--surface)", borderRadius:12, padding:16, marginTop:12, border:"1px solid var(--border)", textAlign:"center" }}>
+                                          <div style={{ fontSize:24, marginBottom:6 }}>⚠️</div>
+                                          <div style={{ color:"var(--muted)", fontSize:12, fontFamily:"var(--font-mono)" }}>Could not render chart</div>
+                                        </div>
+                                      );
+                                    }
                                   }
-
-                                  return (
-                                    <div style={{ background: "var(--bg2)", borderRadius: 16, padding: "20px", marginTop: 24, marginBottom: 24, border: "1px solid var(--border)", position: "relative", zIndex: 1, width: "100%", height: chartConfig.type === 'pie' ? "380px" : "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)", transition: "transform 0.3s" }} 
-                                         onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
-                                         onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
-                                      {chartConfig.type === 'pie' ? <Pie data={chartData} options={options} /> : <Bar data={chartData} options={options} />}
-                                    </div>
-                                  );
-                                } catch (e) {
-                                  return <code>{children}</code>;
+                                  return <code className={className} {...props}>{children}</code>;
                                 }
-                              }
-                              return <code className={className} {...props}>{children}</code>
-                            }
-                          }}
-                        >
-                          {m.text}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                    {m.data && !m.text.includes("```chart") && (
-                      <div style={{ marginTop:12, display:"flex", gap:8 }}>
-                        {m.data.map(([l,c,n])=>(
-                          <div key={l} style={{ flex:1, background:`${c}18`, border:`1px solid ${c}33`, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
-                            <div style={{ fontSize:18, fontWeight:700, color:c, fontFamily:"var(--font-display)" }}>{n}</div>
-                            <div style={{ fontSize:9, color:c, opacity:0.8, fontFamily:"var(--font-mono)", marginTop:2 }}>{l}</div>
+                              }}
+                            >
+                              {m.text}
+                            </ReactMarkdown>
                           </div>
-                        ))}
+                          {m.data && !m.text.includes("```chart") && (
+                            <div style={{ marginTop:12, display:"flex", flexWrap:"wrap", gap:8 }}>
+                              {m.data.map(([l,c,n])=>(
+                                <div key={l} style={{ flex:"1 1 100px", background:`${c}18`, border:`1px solid ${c}33`, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
+                                  <div style={{ fontSize:18, fontWeight:700, color:c, fontFamily:"var(--font-display)" }}>{n}</div>
+                                  <div style={{ fontSize:9, color:c, opacity:0.8, fontFamily:"var(--font-mono)", marginTop:2 }}>{l}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", marginTop:6, opacity:0.7 }}>{fmt(m.ts)}</div>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <div style={{ fontSize:10, color:"var(--muted)", fontFamily:"var(--font-mono)", marginTop:4, textAlign:m.role==="user"?"right":"left" }}>{fmt(m.ts)}</div>
-                </div>
-                {m.role==="user" && (
-                  <div style={{ width:32, height:32, borderRadius:9, background:"rgba(0,168,232,0.15)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent)", fontSize:14, marginLeft:10, flexShrink:0 }}>
-                    {(user?.displayName||user?.email||"U")[0].toUpperCase()}
+                  );
+                })}
+
+                {/* Typing indicator */}
+                {typing && (
+                  <div style={{ display:"flex", gap:14, alignItems:"flex-start", animation:"fadeUp 0.3s ease both" }}>
+                    <div className="chat-avatar-ai" style={{ width:30, height:30, borderRadius:"50%", background:"rgba(0,168,232,0.1)", border:"1px solid rgba(0,168,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
+                      <img src="/ingres.svg" alt="" style={{ width:18 }} />
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", paddingTop:4 }}>
+                      <div style={{ padding:"12px 20px", borderRadius:16, background:"rgba(10,24,48,0.4)", border:"1px solid var(--border)", display:"flex", alignItems:"center", gap:12, backdropFilter:"blur(8px)" }}>
+                        <span style={{ color:"var(--accent)", display:"flex" }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{animation:"spin-slow 3s linear infinite"}}/></svg>
+                        </span>
+                        <span style={{ fontSize:12, fontWeight:600, fontFamily:"var(--font-mono)", letterSpacing:"0.05em", textTransform:"uppercase", backgroundImage:"linear-gradient(90deg, var(--text) 0%, var(--muted) 50%, var(--text) 100%)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"shimmer 2.5s linear infinite" }}>Consulting CGWB...</span>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </div>
-            ))}
-            {typing && (
-              <div style={{ display:"flex", alignItems:"center", gap:10, animation:"fadeUp 0.3s ease both" }}>
-                <div style={{ width:32, height:32, borderRadius:9, background:"linear-gradient(135deg, #0078d4, #00a8e8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:900, color:"var(--btn-text)", fontSize:12 }}>IN</div>
-                <div style={{ padding:"12px 16px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"16px 16px 16px 4px", display:"flex", gap:5, alignItems:"center" }}>
-                  {[0,0.2,0.4].map((d,i)=><span key={i} style={{ width:7, height:7, borderRadius:"50%", background:"var(--accent)", display:"inline-block", animation:`pulse-dot 1.2s ${d}s infinite` }} />)}
-                </div>
+                <div ref={bottomRef} style={{ height:1 }} />
               </div>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {/* Input area */}
-          <div style={{ padding:"16px 24px", borderTop:"1px solid var(--border)", background:"var(--bg2)" }}>
-            <div style={{ display:"flex", gap:12, alignItems:"flex-end", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14, padding:"8px 8px 8px 16px", transition:"border-color 0.2s" }}
-              onFocus={()=>{}} onBlur={()=>{}}>
+          <div style={{ padding:"0 24px 20px", background:"var(--bg)" }}>
+            <div className="input-glass" style={{ display:"flex", gap:12, alignItems:"flex-end", background:"rgba(10,24,48,0.5)", border:"1px solid rgba(0,168,232,0.15)", borderRadius:18, padding:"10px 10px 10px 20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.15)" }}>
               <textarea
                 className="chat-input"
                 ref={inputRef}
                 value={input}
-                onChange={e=>setInput(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Ask about groundwater in any state, district, or block…"
                 rows={1}
-                style={{ flex:1, background:"transparent", border:"none", color:"var(--text)", fontSize:14, fontFamily:"var(--font-body)", resize:"none", outline:"none", lineHeight:1.5, padding:"6px 0", maxHeight:120, overflowY:"auto" }}
+                style={{ flex:1, background:"transparent", border:"none", color:"var(--text)", fontSize:15, fontFamily:"var(--font-body)", resize:"none", outline:"none", lineHeight:1.5, padding:"8px 0", maxHeight:140, overflowY:"auto" }}
               />
-              <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||typing} style={{ width:40, height:40, borderRadius:10, background: input.trim()&&!typing?"var(--accent)":"rgba(255,255,255,0.06)", border:"none", cursor:input.trim()&&!typing?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s", boxShadow: input.trim()?"0 0 16px rgba(0,168,232,0.2)":"none", flexShrink:0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke={input.trim()&&!typing?"var(--bg)":"var(--muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <button 
+                className="send-btn" 
+                onClick={() => send()} 
+                disabled={!input.trim() || typing} 
+                style={{ 
+                  width:44, height:44, borderRadius:12, 
+                  background: input.trim() && !typing ? "linear-gradient(135deg, var(--accent2), var(--accent))" : "rgba(255,255,255,0.05)", 
+                  border:"none", cursor: input.trim() && !typing ? "pointer" : "default", 
+                  display:"flex", alignItems:"center", justifyContent:"center", 
+                  transition:"all 0.25s cubic-bezier(.22,1,.36,1)", 
+                  boxShadow: input.trim() && !typing ? "0 4px 16px rgba(0,168,232,0.25)" : "none",
+                  color: input.trim() && !typing ? "var(--btn-text)" : "var(--muted)",
+                  flexShrink:0 
+                }}
+                onMouseEnter={e => { if(input.trim() && !typing) e.currentTarget.style.transform = "scale(1.06)"; }}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
-            <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", textAlign:"center", marginTop:8 }}>
+            <div style={{ fontSize:11, color:"var(--muted)", fontFamily:"var(--font-mono)", textAlign:"center", marginTop:10, opacity:0.7 }}>
               Powered by CGWB FY 2024-25 data · Press Enter to send · Shift+Enter for new line
             </div>
           </div>
