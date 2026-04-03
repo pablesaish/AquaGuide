@@ -248,7 +248,11 @@ User Query: "${query}"
 `;
 
   try {
-    const openai = new OpenAI({ apiKey: apiKey, dangerouslyAllowBrowser: true });
+    const openai = new OpenAI({ 
+      apiKey: apiKey, 
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      dangerouslyAllowBrowser: true 
+    });
     
     // Build conversation history for context awareness
     const historyMessages = chatHistory.slice(-6).map(m => ({
@@ -257,7 +261,7 @@ User Query: "${query}"
     }));
     
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gemini-1.5-flash",
       messages: [
         { role: "system", content: prompt },
         ...historyMessages,

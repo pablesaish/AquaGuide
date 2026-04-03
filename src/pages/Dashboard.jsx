@@ -287,27 +287,27 @@ export default function Dashboard() {
                 </div>
 
                 {/* Trend chart */}
-                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "24px", animation: "fadeUp 0.5s ease 0.35s both" }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "24px", animation: "fadeUp 0.5s ease 0.35s both", display: "flex", flexDirection: "column" }}>
                   <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-mono)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Trend Analysis</div>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Safe Blocks % · 2023</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Safe Blocks % · 2024</div>
                   <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>Monthly distribution across India</div>
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 100, position: "relative" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 8, flex: 1, minHeight: 180, alignItems: "end", position: "relative", marginBottom: 12 }}>
                     {trendData.map((v, i) => (
-                      <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative" }}>
-                        <div style={{ width: "100%", height: `${v}px`, background: v >= 70 ? "var(--accent)" : v >= 65 ? "#f0dc3a" : "#f5a623", borderRadius: "3px 3px 0 0", opacity: 0.8, animation: `bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i * 0.07}s both`, transition: "all 0.2s", cursor: "pointer" }}
+                      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 8, position: "relative" }}>
+                        <div style={{ width: "100%", height: `${v}%`, background: v >= 70 ? "var(--accent)" : v >= 65 ? "#f0dc3a" : "#f5a623", borderRadius: "4px 4px 0 0", opacity: 0.85, animation: `bar-grow 0.8s cubic-bezier(.22,1,.36,1) ${i * 0.05}s both`, transition: "all 0.2s", cursor: "pointer" }}
                           onMouseEnter={() => setHoveredBar(i)}
                           onMouseLeave={() => setHoveredBar(null)}
                         />
                         {hoveredBar === i && (
-                          <div style={{ position: "absolute", bottom: `${v + 8}px`, background: "var(--bg2)", border: "1px solid var(--border)", padding: "6px 10px", borderRadius: 6, color: "var(--text)", fontSize: 11, fontWeight: 600, zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
+                          <div style={{ position: "absolute", bottom: `calc(${v}% + 28px)`, left: "50%", transform: "translateX(-50%)", background: "var(--bg2)", border: "1px solid var(--border)", padding: "6px 10px", borderRadius: 6, color: "var(--text)", fontSize: 11, fontWeight: 600, zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
                             {months[i]}: {v}%
                           </div>
                         )}
-                        <div style={{ fontSize: 8, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>{months[i]}</div>
+                        <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)", fontWeight: 600 }}>{months[i]}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+                  <div style={{ display: "flex", gap: 16, marginTop: "auto" }}>
                     {[["≥70% Safe", "var(--accent)"], ["65–70%", "#f0dc3a"], ["<65%", "#f5a623"]].map(([l, c]) => (
                       <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
                         <span style={{ width: 8, height: 8, borderRadius: 2, background: c, display: "inline-block" }} />{l}

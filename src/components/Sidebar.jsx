@@ -31,7 +31,6 @@ export default function Sidebar() {
     { id: "maps",      icon: "🗺️", label: "Map View", path: "/maps" },
     { id: "data",      icon: "📊", label: "Data Explorer", path: "/data" },
     { id: "history",   icon: "🕐", label: "Chat History", path: "/history" },
-    { id: "reports",   icon: "📄", label: "Saved Reports", path: "/reports" },
   ];
 
   const currentPath = location.pathname;
