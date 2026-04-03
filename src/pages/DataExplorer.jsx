@@ -4,8 +4,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Sidebar from "../components/Sidebar";
 import { exportToCSV, exportToExcel, exportToPDF } from "../utils/exportUtils";
-import { parseReportData } from "../utils/dataParser";
-import rawReport from "../data/reportData.json";
+import { parseSummaryData } from "../utils/dataParser";
 
 /* ══════════════════════════════════════════════════════════
    AquaGuide AI – Data Explorer
@@ -244,15 +243,22 @@ export default function DataExplorer() {
   const [sortDir, setSortDir] = useState("asc");
   const tableRef = useRef(null);
 
+  const [data, setData] = useState({ districts: [], states: [] });
+  const { districts, states } = useMemo(() => data, [data]);
+
   useEffect(() => {
-    return onAuthStateChanged(auth, u => {
+    onAuthStateChanged(auth, u => {
       if (!u) navigate("/login");
       else setUser(u);
     });
-  }, []);
 
-  /* ─── Parse data once ──────────────────────────────── */
-  const { districts, states } = useMemo(() => parseReportData(rawReport), []);
+    fetch('/summaryData.json')
+      .then(res => res.json())
+      .then(d => {
+        setData(parseSummaryData(d));
+      })
+      .catch(console.error);
+  }, [navigate]);
 
   /* ─── Unique state list ────────────────────────────── */
   const stateList = useMemo(() => {

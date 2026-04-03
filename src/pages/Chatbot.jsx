@@ -9,8 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer } from 'recharts';
-import { parseReportData } from '../utils/dataParser';
-import rawReport from '../data/reportData.json';
+import { parseSummaryData } from '../utils/dataParser';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -283,7 +282,18 @@ CHART RULES: When the query involves categories, comparisons, or distributions �
 Use "pie", "bar", "line", or "area". Use "line"/"area" for time trends.
 
 DATA CONTEXT:
-Source: CGWB INGRES (India's National Ground Water Resource Estimation System) — reportData for FY 2024-25.
+Source: CGWB INGRES (India's National Ground Water Resource Estimation System) — summaryData for FY 2024-25.
+The data is organized into logical groups for each district/block:
+- 🗺️ Geographical: Total area, recharge worthy area, hilly area.
+- 🌧️ Recharge: Annual groundwater recharge from Various sources.
+- 🌊 Environmental: Environmental flows (water reserved for nature).
+- ⛏️ Extractable: Annual extractable groundwater resource.
+- 🚰 Extraction: Groundwater extraction for domestic, industrial, and irrigation uses.
+- 📈 Stage: Stage of groundwater extraction (%) and Category (Safe, Semi-Critical, Critical, Over-Exploited).
+- 🏠 Allocation: Allocation for domestic use (projected 2025).
+- 🔓 Net Availability: Net groundwater availability for future use.
+- 🧪 Quality: Contaminants present (if any).
+
 ${matchedStates.length > 0 ? `User query resolved to: ${matchedStates.join(", ")}${matchedDistricts.length > 0 ? ` (Districts: ${matchedDistricts.join(", ")})` : ""}` : "No specific state/district matched — showing national overview."}
 ${JSON.stringify(contextData)}
 
@@ -320,7 +330,8 @@ User Query: "${query}"
 export default function Chatbot() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const parsedData = useMemo(() => parseReportData(rawReport), []);
+  const [data, setData] = useState({ districts: [], states: [] });
+  const parsedData = useMemo(() => data, [data]);
 
   const [suggestions, setSuggestions] = useState(() => pickRandom(SUGGESTION_POOL, 4));
   const [sessions, setSessions] = useState([]);
@@ -356,7 +367,14 @@ export default function Chatbot() {
         }
       }
     }); 
-    // Use synchronous parsedData from top
+
+    fetch('/summaryData.json')
+      .then(res => res.json())
+      .then(d => {
+        setData(parseSummaryData(d));
+      })
+      .catch(console.error);
+
     return u; 
   }, [navigate]);
   
