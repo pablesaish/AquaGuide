@@ -250,7 +250,6 @@ User Query: "${query}"
   try {
     const openai = new OpenAI({ 
       apiKey: apiKey, 
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       dangerouslyAllowBrowser: true 
     });
     
@@ -261,7 +260,7 @@ User Query: "${query}"
     }));
     
     const response = await openai.chat.completions.create({
-      model: "gemini-1.5-flash",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: prompt },
         ...historyMessages,
