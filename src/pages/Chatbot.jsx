@@ -408,6 +408,7 @@ export default function Chatbot() {
     activeSessionRef.current = null;   // clear ref synchronously
     setActiveSessionId(null);
     setMessages([]);
+    setSuggestions(pickRandom(SUGGESTION_POOL, 4));
   };
   
   const loadSession = (id) => {
