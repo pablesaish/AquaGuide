@@ -637,6 +637,7 @@ export default function Chatbot() {
                                           borderWidth: 2,
                                           hoverOffset: chartConfig.type === 'pie' ? 12 : 0,
                                           borderRadius: chartConfig.type === 'bar' ? 6 : 0,
+                                          maxBarThickness: 95,
                                         }]
                                       };
                                       
